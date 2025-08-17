@@ -1,4 +1,5 @@
 pub mod convert;
+mod methods;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AnyStress {

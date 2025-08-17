@@ -9,3 +9,6 @@ categories = ["data-structures", "internationalization", "localization", "text-p
 repository = "https://github.com/Chasmical/zaliznyak-rs"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
+
+[dependencies]
+thiserror = "2"

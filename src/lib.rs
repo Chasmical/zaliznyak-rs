@@ -1,7 +1,1 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub mod stress;

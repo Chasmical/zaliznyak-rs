@@ -1,0 +1,9 @@
+style_edition = "2024"
+newline_style = "Unix"
+
+merge_derives = false
+use_field_init_shorthand = true
+match_block_trailing_comma = true
+overflow_delimited_expr = true
+where_single_line = true
+use_small_heuristics = "Max"

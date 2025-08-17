@@ -1,3 +1,6 @@
+mod unsafe_buf;
+pub(crate) use unsafe_buf::*;
+
 macro_rules! enum_conversion {
     (
         $from:ty => $to:ty {

@@ -1,4 +1,5 @@
 pub mod convert;
+mod fmt;
 mod methods;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

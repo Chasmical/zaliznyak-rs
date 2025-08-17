@@ -3,7 +3,7 @@ use crate::{
         AdjectiveFullStress, AdjectiveShortStress, AdjectiveStress, AnyDualStress, AnyStress,
         NounStress, PronounStress, VerbPastStress, VerbPresentStress, VerbStress,
     },
-    util::enum_conversion,
+    util::{const_try, enum_conversion},
 };
 use thiserror::Error;
 
@@ -44,6 +44,33 @@ pub enum VerbStressError {
     Past(#[from] VerbPastStressError),
 }
 
+//                         TABLE OF STRESS TYPE CONVERSIONS
+// ┌———————┬——————┬——————┬——————┬——————┬——————┬——————┬——————╥——————┬——————┬——————┐
+// │From\To│ Any  │ Noun │ Pro  │ AdjF │ AdjS │ VerbF│ VerbP║ ANY  │ ADJ  │ VERB │
+// ├———————┼——————┼——————┼——————┼——————┼——————┼——————┼——————╫——————┼——————┼——————┤
+// │ Any   │ ———— │  []  │  []  │  []  │  []  │  []  │  []  ║  ██  │  []  │  []  │
+// ├———————┼——————┼——————┼——————┼——————┼——————┼——————┼——————╫——————┼——————┼——————┤
+// │ Noun  │  ██  │ ———— │      │      │      │      │      ║  ██  │      │      │
+// ├———————┼——————┼——————┼——————┼——————┼——————┼——————┼——————╫——————┼——————┼——————┤
+// │ Pro   │  ██  │      │ ———— │      │      │      │      ║  ██  │      │      │
+// ├———————┼——————┼——————┼——————┼——————┼——————┼——————┼——————╫——————┼——————┼——————┤
+// │ AdjF  │  ██  │      │      │ ———— │      │      │      ║  ██  │      │      │
+// ├———————┼——————┼——————┼——————┼——————┼——————┼——————┼——————╫——————┼——————┼——————┤
+// │ AdjS  │  ██  │      │      │      │ ———— │      │      ║  ██  │      │      │
+// ├———————┼——————┼——————┼——————┼——————┼——————┼——————┼——————╫——————┼——————┼——————┤
+// │ VerbF │  ██  │      │      │      │      │ ———— │      ║  ██  │      │      │
+// ├———————┼——————┼——————┼——————┼——————┼——————┼——————┼——————╫——————┼——————┼——————┤
+// │ VerbP │  ██  │      │      │      │      │      │ ———— ║  ██  │      │      │
+// ╞═══════╪══════╪══════╪══════╪══════╪══════╪══════╪══════╬══════╪══════╪══════╡
+// │ ANY   │  []  │  []  │  []  │  []  │  []  │  []  │  []  ║ ———— │  []  │  []  │
+// ├———————┼——————┼——————┼——————┼——————┼——————┼——————┼——————╫——————┼——————┼——————┤
+// │ ADJ   │      │      │      │      │      │      │      ║  ██  │ ———— │      │
+// ├———————┼——————┼——————┼——————┼——————┼——————┼——————┼——————╫——————┼——————┼——————┤
+// │ VERB  │      │      │      │      │      │      │      ║  ██  │      │ ———— │
+// └———————┴——————┴——————┴——————┴——————┴——————┴——————┴——————╨——————┴——————┴——————┘
+//                                                     ██ — From   [] — TryFrom
+
+// Convert simple stresses to AnyStress, and vice versa
 enum_conversion! {
     NounStress => AnyStress { A, B, C, D, E, F, Bp, Dp, Fp, Fpp } else { NounStressError }
 }
@@ -63,11 +90,35 @@ enum_conversion! {
     VerbPastStress => AnyStress { A, B, C, Cp, Cpp } else { VerbPastStressError }
 }
 
+// Convert simple stresses to AnyDualStress
 impl<T: [const] Into<AnyStress>> const From<T> for AnyDualStress {
     fn from(value: T) -> Self {
         Self::new(value.into(), None)
     }
 }
+
+// Convert AnyDualStress to simple stresses
+impl const TryFrom<AnyDualStress> for AnyStress {
+    type Error = ();
+    fn try_from(value: AnyDualStress) -> Result<Self, Self::Error> {
+        if value.alt.is_none() { Ok(value.main) } else { Err(()) }
+    }
+}
+macro_rules! derive_simple_try_from_dual_impls {
+    ($($t:ty),+ $(,)?) => ($(
+        impl const TryFrom<AnyDualStress> for $t {
+            type Error = <$t as TryFrom<AnyStress>>::Error;
+            fn try_from(value: AnyDualStress) -> Result<Self, Self::Error> {
+                if value.alt.is_none() { value.main.try_into() } else { Err(Self::Error {}) }
+            }
+        }
+    )+);
+}
+derive_simple_try_from_dual_impls! {
+    NounStress, PronounStress, AdjectiveFullStress, AdjectiveShortStress, VerbPresentStress, VerbPastStress,
+}
+
+// Convert adjective/verb stresses to AnyDualStress
 impl const From<AdjectiveStress> for AnyDualStress {
     fn from(value: AdjectiveStress) -> Self {
         Self::new(value.full.into(), Some(value.short.into()))
@@ -76,5 +127,29 @@ impl const From<AdjectiveStress> for AnyDualStress {
 impl const From<VerbStress> for AnyDualStress {
     fn from(value: VerbStress) -> Self {
         Self::new(value.present.into(), Some(value.past.into()))
+    }
+}
+
+// Convert AnyDualStress to adjective/verb stresses
+impl const TryFrom<AnyDualStress> for AdjectiveStress {
+    type Error = AdjectiveStressError;
+    fn try_from(value: AnyDualStress) -> Result<Self, Self::Error> {
+        let (main, alt) = value.normalize_adj();
+
+        Ok(Self::new(
+            const_try!(main.try_into(), Self::Error::Full),
+            const_try!(alt.try_into(), Self::Error::Short),
+        ))
+    }
+}
+impl const TryFrom<AnyDualStress> for VerbStress {
+    type Error = VerbStressError;
+    fn try_from(value: AnyDualStress) -> Result<Self, Self::Error> {
+        let (main, alt) = value.normalize_verb();
+
+        Ok(Self::new(
+            const_try!(main.try_into(), Self::Error::Present),
+            const_try!(alt.try_into(), Self::Error::Past),
+        ))
     }
 }

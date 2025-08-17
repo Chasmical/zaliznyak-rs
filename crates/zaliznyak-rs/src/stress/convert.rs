@@ -3,7 +3,7 @@ use crate::{
         AdjectiveFullStress, AdjectiveShortStress, AdjectiveStress, AnyDualStress, AnyStress,
         NounStress, PronounStress, VerbPastStress, VerbPresentStress, VerbStress,
     },
-    util::{const_try, enum_conversion},
+    util::enum_conversion,
 };
 use thiserror::Error;
 
@@ -137,8 +137,8 @@ impl const TryFrom<AnyDualStress> for AdjectiveStress {
         let (main, alt) = value.normalize_adj();
 
         Ok(Self::new(
-            const_try!(main.try_into(), Self::Error::Full),
-            const_try!(alt.try_into(), Self::Error::Short),
+            main.try_into().map_err(Self::Error::Full)?,
+            alt.try_into().map_err(Self::Error::Short)?,
         ))
     }
 }
@@ -148,8 +148,8 @@ impl const TryFrom<AnyDualStress> for VerbStress {
         let (main, alt) = value.normalize_verb();
 
         Ok(Self::new(
-            const_try!(main.try_into(), Self::Error::Present),
-            const_try!(alt.try_into(), Self::Error::Past),
+            main.try_into().map_err(Self::Error::Present)?,
+            alt.try_into().map_err(Self::Error::Past)?,
         ))
     }
 }

@@ -1,7 +1,5 @@
 mod unsafe_buf;
 pub(crate) use unsafe_buf::*;
-mod const_try;
-pub(crate) use const_try::*;
 
 macro_rules! enum_conversion {
     (

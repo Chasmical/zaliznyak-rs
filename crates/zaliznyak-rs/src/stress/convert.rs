@@ -153,3 +153,15 @@ impl const TryFrom<AnyDualStress> for VerbStress {
         ))
     }
 }
+
+// Convert tuples of AnyStress to AnyDualStress
+impl const From<(AnyStress, Option<AnyStress>)> for AnyDualStress {
+    fn from(value: (AnyStress, Option<AnyStress>)) -> Self {
+        Self::new(value.0, value.1)
+    }
+}
+impl const From<(AnyStress, AnyStress)> for AnyDualStress {
+    fn from(value: (AnyStress, AnyStress)) -> Self {
+        Self::new(value.0, Some(value.1))
+    }
+}

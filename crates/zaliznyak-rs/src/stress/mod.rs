@@ -1,5 +1,6 @@
 pub mod convert;
 mod fmt;
+pub mod from_str;
 mod methods;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

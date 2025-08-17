@@ -8,7 +8,7 @@ use crate::{
 
 impl AnyStress {
     pub const fn fmt_to(self, dst: &mut [u8; 4]) -> &mut str {
-        // Write the letter: a, b, c, d, e, f
+        // Write the latin letter
         dst[0] = match self.unprime() {
             Self::A => b'a',
             Self::B => b'b',

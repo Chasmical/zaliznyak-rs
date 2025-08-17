@@ -9,8 +9,8 @@ impl<'a> UnsafeBuf<'a> {
         unsafe { Self { start: &*start, end: &mut *start } }
     }
 
-    pub const fn forward(&mut self, distance: usize) {
-        self.end = unsafe { &mut *(self.end as *mut u8).add(distance) };
+    pub const fn forward(&mut self, dist: usize) {
+        self.end = unsafe { &mut *(self.end as *mut u8).add(dist) };
     }
     pub const fn chunk<const N: usize>(&mut self) -> &'a mut [u8; N] {
         unsafe { &mut *(self.end as *mut u8 as *mut [u8; N]) }

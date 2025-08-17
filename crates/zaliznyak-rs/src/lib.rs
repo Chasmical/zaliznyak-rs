@@ -1,4 +1,5 @@
 #![feature(const_trait_impl)]
+#![feature(const_cmp)]
 #![feature(const_try)]
 #![feature(const_from)]
 #![feature(const_destruct)]

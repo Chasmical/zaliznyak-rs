@@ -101,3 +101,57 @@ impl VerbStress {
         Self { present, past }
     }
 }
+
+#[allow(non_upper_case_globals)]
+impl AdjectiveStress {
+    pub const A: Self = Self::new(AdjectiveFullStress::A, AdjectiveShortStress::A);
+    pub const A_A: Self = Self::new(AdjectiveFullStress::A, AdjectiveShortStress::A);
+    pub const A_B: Self = Self::new(AdjectiveFullStress::A, AdjectiveShortStress::B);
+    pub const A_C: Self = Self::new(AdjectiveFullStress::A, AdjectiveShortStress::C);
+    pub const A_Ap: Self = Self::new(AdjectiveFullStress::A, AdjectiveShortStress::Ap);
+    pub const A_Bp: Self = Self::new(AdjectiveFullStress::A, AdjectiveShortStress::Bp);
+    pub const A_Cp: Self = Self::new(AdjectiveFullStress::A, AdjectiveShortStress::Cp);
+    pub const A_Cpp: Self = Self::new(AdjectiveFullStress::A, AdjectiveShortStress::Cpp);
+
+    pub const B: Self = Self::new(AdjectiveFullStress::B, AdjectiveShortStress::B);
+    pub const B_A: Self = Self::new(AdjectiveFullStress::B, AdjectiveShortStress::A);
+    pub const B_B: Self = Self::new(AdjectiveFullStress::B, AdjectiveShortStress::B);
+    pub const B_C: Self = Self::new(AdjectiveFullStress::B, AdjectiveShortStress::C);
+    pub const B_Ap: Self = Self::new(AdjectiveFullStress::B, AdjectiveShortStress::Ap);
+    pub const B_Bp: Self = Self::new(AdjectiveFullStress::B, AdjectiveShortStress::Bp);
+    pub const B_Cp: Self = Self::new(AdjectiveFullStress::B, AdjectiveShortStress::Cp);
+    pub const B_Cpp: Self = Self::new(AdjectiveFullStress::B, AdjectiveShortStress::Cpp);
+
+    pub const Ap: Self = Self::new(AdjectiveFullStress::A, AdjectiveShortStress::Ap);
+    pub const Bp: Self = Self::new(AdjectiveFullStress::B, AdjectiveShortStress::Bp);
+}
+#[allow(non_upper_case_globals)]
+impl VerbStress {
+    pub const A: Self = Self::new(VerbPresentStress::A, VerbPastStress::A);
+    pub const A_A: Self = Self::new(VerbPresentStress::A, VerbPastStress::A);
+    pub const A_B: Self = Self::new(VerbPresentStress::A, VerbPastStress::B);
+    pub const A_C: Self = Self::new(VerbPresentStress::A, VerbPastStress::C);
+    pub const A_Cp: Self = Self::new(VerbPresentStress::A, VerbPastStress::Cp);
+    pub const A_Cpp: Self = Self::new(VerbPresentStress::A, VerbPastStress::Cpp);
+
+    pub const B: Self = Self::new(VerbPresentStress::B, VerbPastStress::A);
+    pub const B_A: Self = Self::new(VerbPresentStress::B, VerbPastStress::A);
+    pub const B_B: Self = Self::new(VerbPresentStress::B, VerbPastStress::B);
+    pub const B_C: Self = Self::new(VerbPresentStress::B, VerbPastStress::C);
+    pub const B_Cp: Self = Self::new(VerbPresentStress::B, VerbPastStress::Cp);
+    pub const B_Cpp: Self = Self::new(VerbPresentStress::B, VerbPastStress::Cpp);
+
+    pub const C: Self = Self::new(VerbPresentStress::C, VerbPastStress::A);
+    pub const C_A: Self = Self::new(VerbPresentStress::C, VerbPastStress::A);
+    pub const C_B: Self = Self::new(VerbPresentStress::C, VerbPastStress::B);
+    pub const C_C: Self = Self::new(VerbPresentStress::C, VerbPastStress::C);
+    pub const C_Cp: Self = Self::new(VerbPresentStress::C, VerbPastStress::Cp);
+    pub const C_Cpp: Self = Self::new(VerbPresentStress::C, VerbPastStress::Cpp);
+
+    pub const Cp: Self = Self::new(VerbPresentStress::Cp, VerbPastStress::A);
+    pub const Cp_A: Self = Self::new(VerbPresentStress::Cp, VerbPastStress::A);
+    pub const Cp_B: Self = Self::new(VerbPresentStress::Cp, VerbPastStress::B);
+    pub const Cp_C: Self = Self::new(VerbPresentStress::Cp, VerbPastStress::C);
+    pub const Cp_Cp: Self = Self::new(VerbPresentStress::Cp, VerbPastStress::Cp);
+    pub const Cp_Cpp: Self = Self::new(VerbPresentStress::Cp, VerbPastStress::Cpp);
+}

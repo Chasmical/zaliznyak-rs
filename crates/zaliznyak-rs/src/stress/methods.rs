@@ -1,4 +1,7 @@
-use crate::stress::AnyStress;
+use crate::stress::{
+    AdjectiveShortStress, AdjectiveStress, AnyDualStress, AnyStress, VerbPastStress,
+    VerbPresentStress, VerbStress,
+};
 
 impl AnyStress {
     pub const fn has_any_primes(self) -> bool {
@@ -42,8 +45,58 @@ impl AnyStress {
     }
 }
 
-// TODO: abbreviation methods (adjective/verb to any)
+impl AnyDualStress {
+    pub const fn normalize_adj(self) -> (AnyStress, AnyStress) {
+        if let Some(alt) = self.alt { (self.main, alt) } else { (self.main.unprime(), self.main) }
+    }
+    pub const fn normalize_verb(self) -> (AnyStress, AnyStress) {
+        (self.main, self.alt.unwrap_or(AnyStress::A))
+    }
 
-// TODO: normalization methods _adj/_verb (any dual to (any, any))
+    pub const fn try_abbr_adj(self) -> Option<AnyStress> {
+        if let Some(alt) = self.alt
+            && !self.main.has_any_primes()
+            && self.main as u8 == alt.unprime() as u8
+        {
+            return Some(alt);
+        }
+        None
+    }
+    pub const fn try_abbr_verb(self) -> Option<AnyStress> {
+        // FIXME(const-hack): Replace with ==.
+        if matches!(self.alt, Some(AnyStress::A)) { Some(self.main) } else { None }
+    }
+
+    pub const fn abbr_adj(self) -> AnyDualStress {
+        self.try_abbr_adj().map_or(self, AnyDualStress::from)
+    }
+    pub const fn abbr_verb(self) -> AnyDualStress {
+        self.try_abbr_verb().map_or(self, AnyDualStress::from)
+    }
+}
+
+impl AdjectiveStress {
+    pub const fn try_abbr(self) -> Option<AdjectiveShortStress> {
+        match self {
+            Self::A_A => Some(AdjectiveShortStress::A),
+            Self::B_B => Some(AdjectiveShortStress::B),
+            Self::A_Ap => Some(AdjectiveShortStress::Ap),
+            Self::B_Bp => Some(AdjectiveShortStress::Bp),
+            _ => None,
+        }
+    }
+    pub const fn abbr(self) -> AnyDualStress {
+        if let Some(abbr) = self.try_abbr() { abbr.into() } else { self.into() }
+    }
+}
+impl VerbStress {
+    pub const fn try_abbr(self) -> Option<VerbPresentStress> {
+        // FIXME(const-hack): Replace with ==.
+        if matches!(self.past, VerbPastStress::A) { Some(self.present) } else { None }
+    }
+    pub const fn abbr(self) -> AnyDualStress {
+        if let Some(abbr) = self.try_abbr() { abbr.into() } else { self.into() }
+    }
+}
 
 // TODO: is_stem_stressed methods

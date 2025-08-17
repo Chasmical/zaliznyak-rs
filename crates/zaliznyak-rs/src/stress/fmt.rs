@@ -65,28 +65,27 @@ impl std::fmt::Display for AnyDualStress {
     }
 }
 
-macro_rules! derive_fmt_impls {
-    ($(
-        $any:ty, $len:literal { $($t:ty),+ $(,)? }
-    )+) => ($($(
-        impl $t {
-            pub const fn fmt_to(self, dst: &mut [u8; $len]) -> &mut str {
-                <$any>::from(self).fmt_to(dst)
-            }
-        }
+macro_rules! derive_simple_fmt_impls {
+    ($($t:ty),+ $(,)?) => ($(
         impl std::fmt::Display for $t {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                <$any>::from(*self).fmt(f)
+                AnyStress::from(*self).fmt(f)
             }
         }
-    )+)+);
+    )+);
 }
-derive_fmt_impls! {
-    AnyStress, 4 {
-        NounStress, PronounStress, AdjectiveFullStress, AdjectiveShortStress, VerbPresentStress, VerbPastStress,
+derive_simple_fmt_impls! {
+    NounStress, PronounStress, AdjectiveFullStress, AdjectiveShortStress, VerbPresentStress, VerbPastStress,
+}
+
+impl std::fmt::Display for AdjectiveStress {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        AnyDualStress::from(*self).abbr_adj().fmt(f)
     }
-    AnyDualStress, 9 {
-        AdjectiveStress, VerbStress,
+}
+impl std::fmt::Display for VerbStress {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        AnyDualStress::from(*self).abbr_verb().fmt(f)
     }
 }
 
@@ -96,22 +95,20 @@ mod tests {
 
     #[test]
     fn fmt_any() {
-        use AnyStress::*;
-
-        assert_eq!(A.to_string(), "a");
-        assert_eq!(B.to_string(), "b");
-        assert_eq!(C.to_string(), "c");
-        assert_eq!(D.to_string(), "d");
-        assert_eq!(E.to_string(), "e");
-        assert_eq!(F.to_string(), "f");
-        assert_eq!(Ap.to_string(), "a′");
-        assert_eq!(Bp.to_string(), "b′");
-        assert_eq!(Cp.to_string(), "c′");
-        assert_eq!(Dp.to_string(), "d′");
-        assert_eq!(Ep.to_string(), "e′");
-        assert_eq!(Fp.to_string(), "f′");
-        assert_eq!(Cpp.to_string(), "c″");
-        assert_eq!(Fpp.to_string(), "f″");
+        assert_eq!(AnyStress::A.to_string(), "a");
+        assert_eq!(AnyStress::B.to_string(), "b");
+        assert_eq!(AnyStress::C.to_string(), "c");
+        assert_eq!(AnyStress::D.to_string(), "d");
+        assert_eq!(AnyStress::E.to_string(), "e");
+        assert_eq!(AnyStress::F.to_string(), "f");
+        assert_eq!(AnyStress::Ap.to_string(), "a′");
+        assert_eq!(AnyStress::Bp.to_string(), "b′");
+        assert_eq!(AnyStress::Cp.to_string(), "c′");
+        assert_eq!(AnyStress::Dp.to_string(), "d′");
+        assert_eq!(AnyStress::Ep.to_string(), "e′");
+        assert_eq!(AnyStress::Fp.to_string(), "f′");
+        assert_eq!(AnyStress::Cpp.to_string(), "c″");
+        assert_eq!(AnyStress::Fpp.to_string(), "f″");
     }
     #[test]
     fn fmt_dual() {
@@ -127,5 +124,25 @@ mod tests {
         assert_eq!(AnyDualStress::new(A, Some(Fp)).to_string(), "a/f′");
         assert_eq!(AnyDualStress::new(Cp, Some(E)).to_string(), "c′/e");
         assert_eq!(AnyDualStress::new(Fpp, Some(Cpp)).to_string(), "f″/c″");
+    }
+    #[test]
+    fn fmt_adj() {
+        assert_eq!(AdjectiveStress::A_A.to_string(), "a");
+        assert_eq!(AdjectiveStress::B_B.to_string(), "b");
+        assert_eq!(AdjectiveStress::A_Ap.to_string(), "a′");
+        assert_eq!(AdjectiveStress::B_Bp.to_string(), "b′");
+        assert_eq!(AdjectiveStress::B_A.to_string(), "b/a");
+        assert_eq!(AdjectiveStress::A_Cp.to_string(), "a/c′");
+        assert_eq!(AdjectiveStress::B_Cpp.to_string(), "b/c″");
+    }
+    #[test]
+    fn fmt_verb() {
+        assert_eq!(VerbStress::A_A.to_string(), "a");
+        assert_eq!(VerbStress::B_A.to_string(), "b");
+        assert_eq!(VerbStress::C_A.to_string(), "c");
+        assert_eq!(VerbStress::A_C.to_string(), "a/c");
+        assert_eq!(VerbStress::B_B.to_string(), "b/b");
+        assert_eq!(VerbStress::C_Cpp.to_string(), "c/c″");
+        assert_eq!(VerbStress::Cp_C.to_string(), "c′/c");
     }
 }

@@ -4,6 +4,7 @@ mod from_str;
 mod methods;
 
 pub use convert::*;
+pub use fmt::*;
 pub use from_str::*;
 
 #[derive(Debug, Copy, Eq, Hash)]

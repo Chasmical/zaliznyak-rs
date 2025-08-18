@@ -1,9 +1,11 @@
 use crate::stress::{AdjectiveStress, AnyDualStress, NounStress, PronounStress};
 
 mod flags;
+mod fmt;
 mod stem_types;
 
 pub use flags::*;
+pub use fmt::*;
 pub use stem_types::*;
 
 #[derive(Debug, Copy, Eq, Hash)]

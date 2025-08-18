@@ -6,6 +6,9 @@ use crate::{
     util::UnsafeBuf,
 };
 
+// Longest form: f″/f″ (9 bytes, 4 chars)
+pub const DUAL_STRESS_MAX_LEN: usize = 9;
+
 impl AnyStress {
     pub const fn fmt_to(self, dst: &mut [u8; 4]) -> &mut str {
         // Write the latin letter

@@ -17,18 +17,13 @@ macro_rules! impl_stem_type {
 
         impl $T {
             pub const fn from_digit(digit: u8) -> Option<Self> {
-                Some(match digit {
-                    $($value => <$T>::$variant,)+
-                    _ => return None,
-                })
+                Some(match digit { $($value => <$T>::$variant,)+ _ => return None })
             }
             pub const fn from_ascii_digit(ascii_digit: u8) -> Option<Self> {
                 Self::from_digit(ascii_digit - b'0')
             }
             pub const fn to_digit(self) -> u8 {
-                match self {
-                    $(<$T>::$variant => $value,)+
-                }
+                match self { $(<$T>::$variant => $value,)+ }
             }
             pub const fn to_ascii_digit(self) -> u8 {
                 b'0' + self.to_digit()
@@ -41,7 +36,30 @@ macro_rules! impl_stem_type {
                 unsafe { str::from_utf8_unchecked(slice) }.fmt(f)
             }
         }
+        impl std::str::FromStr for $T {
+            type Err = ParseStemTypeError;
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                if let [ch] = s.as_bytes() {
+                    Ok(match ch - b'0' {
+                        $($value => <$T>::$variant,)+
+                        0..=9 => return Err(Self::Err::IncompatibleDigit),
+                        _ => return Err(Self::Err::Invalid),
+                    })
+                } else {
+                    Err(Self::Err::Invalid)
+                }
+            }
+        }
     );
+}
+
+#[derive(Debug, Error, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
+pub enum ParseStemTypeError {
+    #[error("digit not compatible with specified type")]
+    IncompatibleDigit,
+    #[error("invalid format")]
+    Invalid,
 }
 
 #[derive(Debug, Error, Copy, Eq, Hash)]

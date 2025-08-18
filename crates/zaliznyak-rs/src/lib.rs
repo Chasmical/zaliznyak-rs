@@ -6,6 +6,7 @@
 #![feature(const_option_ops)]
 #![feature(const_result_trait_fn)]
 
+pub mod categories;
 pub mod stress;
 
 mod util;

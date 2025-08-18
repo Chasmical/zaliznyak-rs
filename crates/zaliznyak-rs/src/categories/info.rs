@@ -3,7 +3,8 @@ use crate::categories::{
     traits::{IntoAnimacy, IntoCase, IntoGender, IntoNumber},
 };
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
 pub struct Info {
     pub case: Case,
     pub number: Number,

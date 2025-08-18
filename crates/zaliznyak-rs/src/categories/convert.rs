@@ -4,13 +4,15 @@ use crate::{
 };
 use thiserror::Error;
 
-#[derive(Debug, Default, Error, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Error, Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
 #[error(
     "case must be one of the main 6: nominative, genitive, dative, accusative, instrumental or prepositional"
 )]
 pub struct CaseError;
 
-#[derive(Debug, Default, Error, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Error, Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
 #[error("gender must be one of the main 3: masculine, neuter or feminine")]
 pub struct GenderError;
 

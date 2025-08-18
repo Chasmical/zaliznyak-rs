@@ -7,7 +7,8 @@ pub use convert::*;
 pub use info::*;
 pub use traits::*;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
 pub enum CaseEx {
     #[default]
     Nominative = 0,
@@ -20,7 +21,8 @@ pub enum CaseEx {
     Translative = 7,
     Locative = 8,
 }
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
 pub enum Case {
     #[default]
     Nominative = 0,
@@ -31,7 +33,8 @@ pub enum Case {
     Prepositional = 5,
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
 pub enum GenderEx {
     #[default]
     Masculine = 0,
@@ -39,7 +42,8 @@ pub enum GenderEx {
     Feminine = 2,
     Common = 3,
 }
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
 pub enum Gender {
     #[default]
     Masculine = 0,
@@ -47,13 +51,15 @@ pub enum Gender {
     Feminine = 2,
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
 pub enum Animacy {
     #[default]
     Inanimate = 0,
     Animate = 1,
 }
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
 pub enum Number {
     #[default]
     Singular = 0,

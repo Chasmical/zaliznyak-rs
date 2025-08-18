@@ -5,12 +5,18 @@ use crate::{
     },
     util::{PartialFromStr, UnsafeParser},
 };
+use thiserror::Error;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Error, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub enum ParseStressError {
+    #[error("invalid character in place of letter")]
     InvalidLetter,
+    #[error("invalid combination of letter and primes")]
     InvalidPrime,
+    #[error("stress not compatible with specified type")]
     Incompatible,
+    #[error("invalid format")]
     Invalid,
 }
 

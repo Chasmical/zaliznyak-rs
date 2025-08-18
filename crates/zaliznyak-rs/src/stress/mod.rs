@@ -1,9 +1,13 @@
-pub mod convert;
+mod convert;
 mod fmt;
-pub mod from_str;
+mod from_str;
 mod methods;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub use convert::*;
+pub use from_str::*;
+
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub enum AnyStress {
     A = 1,
     B,
@@ -21,7 +25,8 @@ pub enum AnyStress {
     Fpp,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub enum NounStress {
     A,
     B,
@@ -34,18 +39,21 @@ pub enum NounStress {
     Fp,
     Fpp,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub enum PronounStress {
     A,
     B,
     F,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub enum AdjectiveFullStress {
     A,
     B,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub enum AdjectiveShortStress {
     A,
     B,
@@ -55,14 +63,16 @@ pub enum AdjectiveShortStress {
     Cp,
     Cpp,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub enum VerbPresentStress {
     A,
     B,
     C,
     Cp,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub enum VerbPastStress {
     A,
     B,
@@ -71,17 +81,20 @@ pub enum VerbPastStress {
     Cpp,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub struct AnyDualStress {
     pub main: AnyStress,
     pub alt: Option<AnyStress>,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub struct AdjectiveStress {
     pub full: AdjectiveFullStress,
     pub short: AdjectiveShortStress,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub struct VerbStress {
     pub present: VerbPresentStress,
     pub past: VerbPastStress,

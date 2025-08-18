@@ -27,16 +27,13 @@ impl Case {
         }
     }
 
-    pub const fn is_nom_or_acc_inan<A>(self, animacy: A) -> bool
+    pub const fn is_nom_or_acc_inan<A>(self, info: A) -> bool
     where A: [const] IntoAnimacy + [const] std::marker::Destruct {
-        // FIXME(const-hack): Replace with ==.
-        matches!(self, Self::Nominative)
-            || matches!(self, Self::Accusative) && animacy.is_inanimate()
+        self == Self::Nominative || self == Self::Accusative && info.is_inanimate()
     }
-    pub const fn is_gen_or_acc_an<A>(self, animacy: A) -> bool
+    pub const fn is_gen_or_acc_an<A>(self, info: A) -> bool
     where A: [const] IntoAnimacy + [const] std::marker::Destruct {
-        // FIXME(const-hack): Replace with ==.
-        matches!(self, Self::Genitive) || matches!(self, Self::Accusative) && animacy.is_animate()
+        self == Self::Genitive || self == Self::Accusative && info.is_animate()
     }
 }
 impl Animacy {

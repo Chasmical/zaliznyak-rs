@@ -59,15 +59,14 @@ impl AnyDualStress {
     pub const fn try_abbr_adj(self) -> Option<AnyStress> {
         if let Some(alt) = self.alt
             && !self.main.has_any_primes()
-            && self.main as u8 == alt.unprime() as u8
+            && self.main == alt.unprime()
         {
             return Some(alt);
         }
         None
     }
     pub const fn try_abbr_verb(self) -> Option<AnyStress> {
-        // FIXME(const-hack): Replace with ==.
-        if matches!(self.alt, Some(AnyStress::A)) { Some(self.main) } else { None }
+        if self.alt == Some(AnyStress::A) { Some(self.main) } else { None }
     }
 
     pub const fn abbr_adj(self) -> AnyDualStress {
@@ -81,10 +80,7 @@ impl AnyDualStress {
 impl AdjectiveStress {
     pub const fn try_abbr(self) -> Option<AdjectiveShortStress> {
         match self {
-            Self::A_A => Some(AdjectiveShortStress::A),
-            Self::B_B => Some(AdjectiveShortStress::B),
-            Self::A_Ap => Some(AdjectiveShortStress::Ap),
-            Self::B_Bp => Some(AdjectiveShortStress::Bp),
+            Self::A_A | Self::B_B | Self::A_Ap | Self::B_Bp => Some(self.short),
             _ => None,
         }
     }
@@ -94,8 +90,7 @@ impl AdjectiveStress {
 }
 impl VerbStress {
     pub const fn try_abbr(self) -> Option<VerbPresentStress> {
-        // FIXME(const-hack): Replace with ==.
-        if matches!(self.past, VerbPastStress::A) { Some(self.present) } else { None }
+        if self.past == VerbPastStress::A { Some(self.present) } else { None }
     }
     pub const fn abbr(self) -> AnyDualStress {
         if let Some(abbr) = self.try_abbr() { abbr.into() } else { self.into() }

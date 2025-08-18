@@ -1,4 +1,4 @@
-use crate::categories::{Animacy, Case, CaseEx, Gender, GenderEx, Number};
+use crate::categories::{Animacy, Case, CaseEx, Gender, GenderEx, Number, Person, Tense};
 
 pub const trait IntoCaseEx {
     fn case_ex(&self) -> CaseEx;
@@ -17,20 +17,44 @@ pub const trait IntoAnimacy {
     fn animacy(&self) -> Animacy;
 
     fn is_inanimate(&self) -> bool {
-        matches!(self.animacy(), Animacy::Inanimate)
+        self.animacy() == Animacy::Inanimate
     }
     fn is_animate(&self) -> bool {
-        matches!(self.animacy(), Animacy::Animate)
+        self.animacy() == Animacy::Animate
     }
 }
 pub const trait IntoNumber {
     fn number(&self) -> Number;
 
     fn is_singular(&self) -> bool {
-        matches!(self.number(), Number::Singular)
+        self.number() == Number::Singular
     }
     fn is_plural(&self) -> bool {
-        matches!(self.number(), Number::Plural)
+        self.number() == Number::Plural
+    }
+}
+
+pub const trait IntoTense {
+    fn tense(&self) -> Tense;
+
+    fn is_present(&self) -> bool {
+        self.tense() == Tense::Present
+    }
+    fn is_past(&self) -> bool {
+        self.tense() == Tense::Past
+    }
+}
+pub const trait IntoPerson {
+    fn person(&self) -> Person;
+
+    fn is_first(&self) -> bool {
+        self.person() == Person::First
+    }
+    fn is_second(&self) -> bool {
+        self.person() == Person::Second
+    }
+    fn is_third(&self) -> bool {
+        self.person() == Person::Third
     }
 }
 
@@ -61,6 +85,16 @@ impl const IntoAnimacy for Animacy {
 }
 impl const IntoNumber for Number {
     fn number(&self) -> Number {
+        *self
+    }
+}
+impl const IntoTense for Tense {
+    fn tense(&self) -> Tense {
+        *self
+    }
+}
+impl const IntoPerson for Person {
+    fn person(&self) -> Person {
         *self
     }
 }

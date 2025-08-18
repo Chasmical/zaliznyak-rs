@@ -65,3 +65,19 @@ pub enum Number {
     Singular = 0,
     Plural = 1,
 }
+
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
+pub enum Tense {
+    #[default]
+    Present,
+    Past,
+}
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
+pub enum Person {
+    #[default]
+    First,
+    Second,
+    Third,
+}

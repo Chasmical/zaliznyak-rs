@@ -1,5 +1,5 @@
 use crate::{
-    categories::{Case, Gender, Info, IntoNumber, Number},
+    categories::{Case, Gender, DeclInfo, IntoNumber, Number},
     stress::{
         AdjectiveFullStress, AdjectiveShortStress, AdjectiveStress, AnyDualStress, AnyStress,
         NounStress, PronounStress, VerbPastStress, VerbPresentStress, VerbStress,
@@ -98,7 +98,7 @@ impl VerbStress {
 }
 
 impl NounStress {
-    pub const fn is_stem_stressed(self, info: Info) -> bool {
+    pub const fn is_stem_stressed(self, info: DeclInfo) -> bool {
         // Note: `is_nom_or_acc_inan` is called only when number is plural, i.e. when the
         // accusative case always maps to either nominative or genitive depending on animacy.
 
@@ -121,20 +121,20 @@ impl NounStress {
             },
         }
     }
-    pub const fn is_ending_stressed(self, info: Info) -> bool {
+    pub const fn is_ending_stressed(self, info: DeclInfo) -> bool {
         !self.is_stem_stressed(info)
     }
 }
 
 impl PronounStress {
-    pub const fn is_stem_stressed(self, info: Info) -> bool {
+    pub const fn is_stem_stressed(self, info: DeclInfo) -> bool {
         match self {
             Self::A => true,
             Self::B => false,
             Self::F => info.is_plural() && info.case.is_nom_or_acc_inan(info),
         }
     }
-    pub const fn is_ending_stressed(self, info: Info) -> bool {
+    pub const fn is_ending_stressed(self, info: DeclInfo) -> bool {
         !self.is_stem_stressed(info)
     }
 }

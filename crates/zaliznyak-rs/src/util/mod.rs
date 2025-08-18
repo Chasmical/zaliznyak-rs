@@ -1,9 +1,26 @@
 mod unsafe_buf;
-pub(crate) use unsafe_buf::*;
 mod unsafe_parser;
+
+pub(crate) use unsafe_buf::*;
 pub(crate) use unsafe_parser::*;
 
 macro_rules! enum_conversion {
+    (
+        $from:ty => $to:ty {
+            $($variant:ident),+ $(,)?
+        }
+    ) => (
+        impl const From<$from> for $to {
+            fn from(value: $from) -> Self {
+                match value { $( <$from>::$variant => <$to>::$variant, )+ }
+            }
+        }
+        impl const From<$to> for $from {
+            fn from(value: $to) -> Self {
+                match value { $( <$to>::$variant => <$from>::$variant, )+ }
+            }
+        }
+    );
     (
         $from:ty => $to:ty {
             $($variant:ident),+ $(,)?

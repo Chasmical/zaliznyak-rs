@@ -13,5 +13,6 @@
 
 pub mod categories;
 pub mod stress;
+pub mod declension;
 
 mod util;

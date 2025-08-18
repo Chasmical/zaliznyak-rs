@@ -138,15 +138,15 @@ impl Tense {
     }
 }
 impl Person {
-    pub const fn digit(self) -> u8 {
+    pub const fn to_digit(self) -> u8 {
         match self {
             Self::First => 1,
             Self::Second => 2,
             Self::Third => 3,
         }
     }
-    pub const fn ascii_digit(self) -> u8 {
-        b'0' + self.digit()
+    pub const fn to_ascii_digit(self) -> u8 {
+        b'0' + self.to_digit()
     }
 }
 
@@ -163,7 +163,7 @@ abbr_display_impls! { CaseEx, Case, GenderEx, Gender, Animacy, Number, Tense }
 
 impl std::fmt::Display for Person {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let ascii_digit = self.ascii_digit();
+        let ascii_digit = self.to_ascii_digit();
         let slice = std::slice::from_ref(&ascii_digit);
         unsafe { str::from_utf8_unchecked(slice) }.fmt(f)
     }

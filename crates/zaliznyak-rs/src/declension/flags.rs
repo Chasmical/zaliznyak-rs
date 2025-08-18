@@ -1,7 +1,7 @@
 use bitflags::bitflags;
 
 bitflags! {
-    #[derive(Debug, Copy, Eq, Hash)]
+    #[derive(Debug, Copy, Eq)]
     #[derive_const(Clone)]
     pub struct DeclensionFlags: u8 {
         const STAR = 1 << 0;
@@ -46,6 +46,15 @@ impl DeclensionFlags {
     pub const fn has_any_trailing_flags(self) -> bool {
         self.intersects(Self::TRAILING)
     }
+
+    pub const fn circled_digit(digit: u8) -> Option<Self> {
+        match digit {
+            1 => Some(Self::CIRCLED_ONE),
+            2 => Some(Self::CIRCLED_TWO),
+            3 => Some(Self::CIRCLED_THREE),
+            _ => None,
+        }
+    }
 }
 
 // FIXME(const-hack): Replace these with #[derive_const], once bitflags crate supports it.
@@ -57,5 +66,10 @@ impl const Default for DeclensionFlags {
 impl const PartialEq for DeclensionFlags {
     fn eq(&self, other: &Self) -> bool {
         self.bits() == other.bits()
+    }
+}
+impl std::hash::Hash for DeclensionFlags {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write_u8(self.bits());
     }
 }

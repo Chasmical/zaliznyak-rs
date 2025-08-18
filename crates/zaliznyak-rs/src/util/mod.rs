@@ -45,4 +45,33 @@ macro_rules! enum_conversion {
     );
 }
 
-pub(crate) use enum_conversion;
+pub(crate) const trait _ToUtf8 {
+    fn _len_utf8(&self) -> usize;
+    fn _encode_utf8(&self, dst: &mut [u8]);
+}
+impl const _ToUtf8 for char {
+    fn _len_utf8(&self) -> usize {
+        self.len_utf8()
+    }
+    fn _encode_utf8(&self, dst: &mut [u8]) {
+        self.encode_utf8(dst);
+    }
+}
+impl const _ToUtf8 for &str {
+    fn _len_utf8(&self) -> usize {
+        self.len()
+    }
+    fn _encode_utf8(&self, dst: &mut [u8]) {
+        dst.copy_from_slice(self.as_bytes());
+    }
+}
+
+macro_rules! utf8_bytes {
+    ($ch:literal) => {{
+        let mut buf = [0; $crate::util::_ToUtf8::_len_utf8(&$ch)];
+        $crate::util::_ToUtf8::_encode_utf8(&$ch, &mut buf);
+        buf
+    }};
+}
+
+pub(crate) use {enum_conversion, utf8_bytes};

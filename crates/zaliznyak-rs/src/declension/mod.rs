@@ -2,10 +2,12 @@ use crate::stress::{AdjectiveStress, AnyDualStress, NounStress, PronounStress};
 
 mod flags;
 mod fmt;
+mod from_str;
 mod stem_types;
 
 pub use flags::*;
 pub use fmt::*;
+pub use from_str::*;
 pub use stem_types::*;
 
 #[derive(Debug, Copy, Eq, Hash)]
@@ -47,13 +49,13 @@ pub struct AdjectiveDeclension {
 }
 
 impl Declension {
-    pub const fn is_noun(&self) -> bool {
+    pub const fn is_noun(self) -> bool {
         matches!(self, Self::Noun(_))
     }
-    pub const fn is_pronoun(&self) -> bool {
+    pub const fn is_pronoun(self) -> bool {
         matches!(self, Self::Pronoun(_))
     }
-    pub const fn is_adjective(&self) -> bool {
+    pub const fn is_adjective(self) -> bool {
         matches!(self, Self::Adjective(_))
     }
     pub const fn as_noun(self) -> Option<NounDeclension> {
@@ -66,7 +68,7 @@ impl Declension {
         if let Self::Adjective(x) = self { Some(x) } else { None }
     }
 
-    pub const fn kind(&self) -> DeclensionKind {
+    pub const fn kind(self) -> DeclensionKind {
         match self {
             Self::Noun(_) => DeclensionKind::Noun,
             Self::Pronoun(_) => DeclensionKind::Pronoun,

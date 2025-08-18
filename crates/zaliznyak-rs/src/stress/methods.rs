@@ -1,6 +1,9 @@
-use crate::stress::{
-    AdjectiveShortStress, AdjectiveStress, AnyDualStress, AnyStress, VerbPastStress,
-    VerbPresentStress, VerbStress,
+use crate::{
+    categories::{Case, Gender, Info, IntoNumber, Number},
+    stress::{
+        AdjectiveFullStress, AdjectiveShortStress, AdjectiveStress, AnyDualStress, AnyStress,
+        NounStress, PronounStress, VerbPastStress, VerbPresentStress, VerbStress,
+    },
 };
 
 impl AnyStress {
@@ -99,4 +102,90 @@ impl VerbStress {
     }
 }
 
-// TODO: is_stem_stressed methods
+impl NounStress {
+    pub const fn is_stem_stressed(self, info: Info) -> bool {
+        // Note: `is_nom_or_acc_inan` is called only when number is plural, i.e. when the
+        // accusative case always maps to either nominative or genitive depending on animacy.
+
+        match self {
+            Self::A => true,
+            Self::B => false,
+            Self::C => info.is_singular(),
+            Self::D => info.is_plural(),
+            Self::E => info.is_singular() || info.case.is_nom_or_acc_inan(info),
+            Self::F => info.is_plural() && info.case.is_nom_or_acc_inan(info),
+            Self::Bp => info.is_singular() && info.case == Case::Instrumental,
+            Self::Dp => info.is_plural() || info.case == Case::Accusative,
+            Self::Fp => match info.number {
+                Number::Singular => info.case == Case::Accusative,
+                Number::Plural => info.case.is_nom_or_acc_inan(info),
+            },
+            Self::Fpp => match info.number {
+                Number::Singular => info.case == Case::Instrumental,
+                Number::Plural => info.case.is_nom_or_acc_inan(info),
+            },
+        }
+    }
+    pub const fn is_ending_stressed(self, info: Info) -> bool {
+        !self.is_stem_stressed(info)
+    }
+}
+
+impl PronounStress {
+    pub const fn is_stem_stressed(self, info: Info) -> bool {
+        match self {
+            Self::A => true,
+            Self::B => false,
+            Self::F => info.is_plural() && info.case.is_nom_or_acc_inan(info),
+        }
+    }
+    pub const fn is_ending_stressed(self, info: Info) -> bool {
+        !self.is_stem_stressed(info)
+    }
+}
+
+impl AdjectiveFullStress {
+    pub const fn is_stem_stressed(self) -> bool {
+        self == Self::A
+    }
+    pub const fn is_ending_stressed(self) -> bool {
+        !self.is_stem_stressed()
+    }
+}
+impl AdjectiveShortStress {
+    pub const fn is_stem_stressed(self, gender: Gender, number: Number) -> Option<bool> {
+        match self {
+            Self::A => Some(true),
+            Self::B => Some(number.is_singular() && gender == Gender::Masculine),
+            Self::C => Some(number.is_plural() || gender != Gender::Feminine),
+
+            Self::Ap => match (number, gender) {
+                (Number::Plural, _) => Some(true),
+                (_, Gender::Masculine) => Some(true),
+                (_, Gender::Neuter) => Some(true),
+                (_, Gender::Feminine) => None,
+            },
+            Self::Bp => match (number, gender) {
+                (Number::Plural, _) => None,
+                (_, Gender::Masculine) => Some(true),
+                (_, Gender::Neuter) => Some(false),
+                (_, Gender::Feminine) => Some(false),
+            },
+            Self::Cp => match (number, gender) {
+                (Number::Plural, _) => None,
+                (_, Gender::Masculine) => Some(true),
+                (_, Gender::Neuter) => Some(true),
+                (_, Gender::Feminine) => Some(false),
+            },
+            Self::Cpp => match (number, gender) {
+                (Number::Plural, _) => None,
+                (_, Gender::Masculine) => Some(true),
+                (_, Gender::Neuter) => None,
+                (_, Gender::Feminine) => Some(false),
+            },
+        }
+    }
+    pub const fn is_ending_stressed(self, gender: Gender, number: Number) -> Option<bool> {
+        self.is_stem_stressed(gender, number).map(<bool as std::ops::Not>::not)
+    }
+}

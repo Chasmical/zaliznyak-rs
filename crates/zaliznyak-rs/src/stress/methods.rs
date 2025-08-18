@@ -1,5 +1,5 @@
 use crate::{
-    categories::{Case, Gender, DeclInfo, IntoNumber, Number},
+    categories::{Case, DeclInfo, Gender, IntoNumber, IntoPerson, Number, Person},
     stress::{
         AdjectiveFullStress, AdjectiveShortStress, AdjectiveStress, AnyDualStress, AnyStress,
         NounStress, PronounStress, VerbPastStress, VerbPresentStress, VerbStress,
@@ -175,6 +175,44 @@ impl AdjectiveShortStress {
             Self::Cpp => match (number, gender) {
                 (Number::Plural, _) => None,
                 (_, Gender::Masculine) => Some(true),
+                (_, Gender::Neuter) => None,
+                (_, Gender::Feminine) => Some(false),
+            },
+        }
+    }
+    pub const fn is_ending_stressed(self, gender: Gender, number: Number) -> Option<bool> {
+        self.is_stem_stressed(gender, number).map(<bool as std::ops::Not>::not)
+    }
+}
+
+impl VerbPresentStress {
+    pub const fn is_stem_stressed(self, person: Person, number: Number) -> bool {
+        match self {
+            Self::A => true,
+            Self::B => false,
+            Self::C => !person.is_first() || !number.is_singular(),
+            Self::Cp => !person.is_first() && number.is_singular(),
+        }
+    }
+    pub const fn is_ending_stressed(self, person: Person, number: Number) -> bool {
+        !self.is_stem_stressed(person, number)
+    }
+}
+impl VerbPastStress {
+    pub const fn is_stem_stressed(self, gender: Gender, number: Number) -> Option<bool> {
+        match self {
+            Self::A => Some(true),
+            Self::B => Some(false),
+            Self::C => Some(number.is_plural() || gender != Gender::Feminine),
+            Self::Cp => match (number, gender) {
+                (Number::Plural, _) => Some(true),
+                (_, Gender::Masculine) => Some(true),
+                (_, Gender::Neuter) => Some(false),
+                (_, Gender::Feminine) => Some(false),
+            },
+            Self::Cpp => match (number, gender) {
+                (Number::Plural, _) => None,
+                (_, Gender::Masculine) => Some(true), // Note: not accounting for dated -ся́ ending
                 (_, Gender::Neuter) => None,
                 (_, Gender::Feminine) => Some(false),
             },

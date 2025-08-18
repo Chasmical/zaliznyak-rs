@@ -148,7 +148,7 @@ impl AdjectiveFullStress {
     }
 }
 impl AdjectiveShortStress {
-    pub const fn is_stem_stressed(self, gender: Gender, number: Number) -> Option<bool> {
+    pub const fn is_stem_stressed(self, number: Number, gender: Gender) -> Option<bool> {
         match self {
             Self::A => Some(true),
             Self::B => Some(number.is_singular() && gender == Gender::Masculine),
@@ -180,26 +180,26 @@ impl AdjectiveShortStress {
             },
         }
     }
-    pub const fn is_ending_stressed(self, gender: Gender, number: Number) -> Option<bool> {
-        self.is_stem_stressed(gender, number).map(<bool as std::ops::Not>::not)
+    pub const fn is_ending_stressed(self, number: Number, gender: Gender) -> Option<bool> {
+        self.is_stem_stressed(number, gender).map(<bool as std::ops::Not>::not)
     }
 }
 
 impl VerbPresentStress {
-    pub const fn is_stem_stressed(self, person: Person, number: Number) -> bool {
+    pub const fn is_stem_stressed(self, number: Number, person: Person) -> bool {
         match self {
             Self::A => true,
             Self::B => false,
-            Self::C => !person.is_first() || !number.is_singular(),
-            Self::Cp => !person.is_first() && number.is_singular(),
+            Self::C => number.is_plural() || !person.is_first(),
+            Self::Cp => number.is_singular() && !person.is_first(),
         }
     }
-    pub const fn is_ending_stressed(self, person: Person, number: Number) -> bool {
-        !self.is_stem_stressed(person, number)
+    pub const fn is_ending_stressed(self, number: Number, person: Person) -> bool {
+        !self.is_stem_stressed(number, person)
     }
 }
 impl VerbPastStress {
-    pub const fn is_stem_stressed(self, gender: Gender, number: Number) -> Option<bool> {
+    pub const fn is_stem_stressed(self, number: Number, gender: Gender) -> Option<bool> {
         match self {
             Self::A => Some(true),
             Self::B => Some(false),
@@ -218,7 +218,7 @@ impl VerbPastStress {
             },
         }
     }
-    pub const fn is_ending_stressed(self, gender: Gender, number: Number) -> Option<bool> {
-        self.is_stem_stressed(gender, number).map(<bool as std::ops::Not>::not)
+    pub const fn is_ending_stressed(self, number: Number, gender: Gender) -> Option<bool> {
+        self.is_stem_stressed(number, gender).map(<bool as std::ops::Not>::not)
     }
 }

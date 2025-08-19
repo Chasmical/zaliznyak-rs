@@ -4,8 +4,8 @@ bitflags! {
     #[derive(Debug, Copy, Eq)]
     #[derive_const(Clone)]
     pub struct DeclensionFlags: u8 {
-        const STAR = 1 << 0;
-        const CIRCLE = 1 << 1;
+        const CIRCLE = 1 << 0;
+        const STAR = 1 << 1;
         const CIRCLED_ONE = 1 << 2;
         const CIRCLED_TWO = 1 << 3;
         const CIRCLED_THREE = 1 << 4;
@@ -14,11 +14,11 @@ bitflags! {
 }
 
 impl DeclensionFlags {
-    pub const fn has_star(self) -> bool {
-        self.intersects(Self::STAR)
-    }
     pub const fn has_circle(self) -> bool {
         self.intersects(Self::CIRCLE)
+    }
+    pub const fn has_star(self) -> bool {
+        self.intersects(Self::STAR)
     }
     pub const fn has_circled_one(self) -> bool {
         self.intersects(Self::CIRCLED_ONE)
@@ -33,7 +33,7 @@ impl DeclensionFlags {
         self.intersects(Self::ALTERNATING_YO)
     }
 
-    const LEADING: Self = Self::STAR.union(Self::CIRCLE);
+    const LEADING: Self = Self::CIRCLE.union(Self::STAR);
     const DIGITS: Self = Self::CIRCLED_ONE.union(Self::CIRCLED_TWO).union(Self::CIRCLED_THREE);
     const TRAILING: Self = Self::DIGITS.union(Self::ALTERNATING_YO);
 

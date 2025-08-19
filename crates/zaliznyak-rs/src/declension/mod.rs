@@ -30,22 +30,22 @@ pub enum DeclensionKind {
 #[derive_const(Clone, PartialEq)]
 pub struct NounDeclension {
     pub stem_type: NounStemType,
-    pub flags: DeclensionFlags,
     pub stress: NounStress,
+    pub flags: DeclensionFlags,
 }
 #[derive(Debug, Copy, Eq, Hash)]
 #[derive_const(Clone, PartialEq)]
 pub struct PronounDeclension {
     pub stem_type: PronounStemType,
-    pub flags: DeclensionFlags,
     pub stress: PronounStress,
+    pub flags: DeclensionFlags,
 }
 #[derive(Debug, Copy, Eq, Hash)]
 #[derive_const(Clone, PartialEq)]
 pub struct AdjectiveDeclension {
     pub stem_type: AdjectiveStemType,
-    pub flags: DeclensionFlags,
     pub stress: AdjectiveStress,
+    pub flags: DeclensionFlags,
 }
 
 impl Declension {
@@ -82,18 +82,18 @@ impl Declension {
             Self::Adjective(x) => x.stem_type.into(),
         }
     }
-    pub const fn flags(self) -> DeclensionFlags {
-        match self {
-            Self::Noun(x) => x.flags,
-            Self::Pronoun(x) => x.flags,
-            Self::Adjective(x) => x.flags,
-        }
-    }
     pub const fn stress(self) -> AnyDualStress {
         match self {
             Self::Noun(x) => x.stress.into(),
             Self::Pronoun(x) => x.stress.into(),
             Self::Adjective(x) => x.stress.into(),
+        }
+    }
+    pub const fn flags(self) -> DeclensionFlags {
+        match self {
+            Self::Noun(x) => x.flags,
+            Self::Pronoun(x) => x.flags,
+            Self::Adjective(x) => x.flags,
         }
     }
 }

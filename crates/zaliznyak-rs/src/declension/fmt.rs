@@ -51,8 +51,8 @@ pub const DECLENSION_MAX_LEN: usize = "п 7".len() + DECLENSION_FLAGS_MAX_LEN + 
 const fn fmt_declension_any(
     dst: &mut [u8; DECLENSION_MAX_LEN],
     stem_type: AnyStemType,
-    flags: DeclensionFlags,
     stress: AnyDualStress,
+    flags: DeclensionFlags,
 ) -> &mut str {
     let mut dst = UnsafeBuf::new(dst);
 
@@ -70,39 +70,39 @@ const fn fmt_declension_any(
 
 impl NounDeclension {
     pub const fn fmt_to(self, dst: &mut [u8; DECLENSION_MAX_LEN]) -> &mut str {
-        fmt_declension_any(dst, self.stem_type.into(), self.flags, self.stress.into())
+        fmt_declension_any(dst, self.stem_type.into(), self.stress.into(), self.flags)
     }
 }
 impl PronounDeclension {
     pub const fn fmt_to(self, dst: &mut [u8; DECLENSION_MAX_LEN]) -> &mut str {
-        fmt_declension_any(dst, self.stem_type.into(), self.flags, self.stress.into())
+        fmt_declension_any(dst, self.stem_type.into(), self.stress.into(), self.flags)
     }
 }
 impl AdjectiveDeclension {
     pub const fn fmt_to(self, dst: &mut [u8; DECLENSION_MAX_LEN]) -> &mut str {
-        fmt_declension_any(dst, self.stem_type.into(), self.flags, self.stress.abbr())
+        fmt_declension_any(dst, self.stem_type.into(), self.stress.abbr(), self.flags)
     }
 }
 impl Declension {
     pub const fn fmt_to(self, dst: &mut [u8; DECLENSION_MAX_LEN]) -> &mut str {
         let mut dst = UnsafeBuf::new(dst);
 
-        let (stem_type, flags, stress) = match self {
+        let (stem_type, stress, flags) = match self {
             Self::Noun(decl) => {
                 // no prefix for nouns
-                (decl.stem_type.into(), decl.flags, decl.stress.into())
+                (decl.stem_type.into(), decl.stress.into(), decl.flags)
             },
             Self::Pronoun(decl) => {
                 dst.push_str("мс ");
-                (decl.stem_type.into(), decl.flags, decl.stress.into())
+                (decl.stem_type.into(), decl.stress.into(), decl.flags)
             },
             Self::Adjective(decl) => {
                 dst.push_str("п ");
-                (decl.stem_type.into(), decl.flags, decl.stress.abbr())
+                (decl.stem_type.into(), decl.stress.abbr(), decl.flags)
             },
         };
 
-        let len = fmt_declension_any(dst.chunk(), stem_type, flags, stress).len();
+        let len = fmt_declension_any(dst.chunk(), stem_type, stress, flags).len();
         dst.forward(len);
 
         dst.finish()

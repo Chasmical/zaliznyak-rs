@@ -82,8 +82,8 @@ impl const PartialFromStr for DeclensionFlags {
 
 struct AnyDeclension {
     stem_type: AnyStemType,
-    flags: DeclensionFlags,
     stress: AnyDualStress,
+    flags: DeclensionFlags,
 }
 
 type Error = ParseDeclensionError;
@@ -126,7 +126,7 @@ const fn parse_declension_any(parser: &mut UnsafeParser) -> Result<AnyDeclension
 
     DeclensionFlags::partial_from_str_trailing(&mut flags, parser)?;
 
-    Ok(AnyDeclension { stem_type, flags, stress })
+    Ok(AnyDeclension { stem_type, stress, flags })
 }
 
 impl const PartialFromStr for NounDeclension {

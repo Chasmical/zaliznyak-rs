@@ -16,6 +16,9 @@ impl<'a> UnsafeParser<'a> {
         // FIXME: Replace with from_ptr_range(self.current..self.end) when it's stable.
         unsafe { std::slice::from_raw_parts(self.current, self.remaining_len()) }
     }
+    pub const fn remaining_str(&self) -> &'a str {
+        unsafe { str::from_utf8_unchecked(self.remaining()) }
+    }
 
     pub const fn forward(&mut self, dist: usize) {
         self.current = unsafe { &*(self.current as *const u8).add(dist) };
@@ -30,6 +33,9 @@ impl<'a> UnsafeParser<'a> {
     pub const fn peek_one(&self) -> Option<&'a u8> {
         if !self.finished() { Some(self.current) } else { None }
     }
+    pub fn peek_char(&self) -> Option<char> {
+        self.remaining_str().chars().next()
+    }
 
     pub const fn read<const N: usize>(&mut self) -> Option<&'a [u8; N]> {
         if let Some(chunk) = self.remaining().first_chunk::<N>() {
@@ -42,6 +48,13 @@ impl<'a> UnsafeParser<'a> {
         if !self.finished() {
             let read = self.current;
             self.forward(1);
+            return Some(read);
+        }
+        None
+    }
+    pub fn read_char(&mut self) -> Option<char> {
+        if let Some(read) = self.peek_char() {
+            self.forward(read.len_utf8());
             return Some(read);
         }
         None
@@ -63,6 +76,9 @@ impl<'a> UnsafeParser<'a> {
     }
     pub const fn skip(&mut self, ch: char) -> bool {
         self.skip_str(ch.encode_utf8(&mut [0; 4]))
+    }
+    pub fn skip_char(&mut self) -> bool {
+        self.peek_char().map(|x| self.forward(x.len_utf8())).is_some()
     }
 }
 

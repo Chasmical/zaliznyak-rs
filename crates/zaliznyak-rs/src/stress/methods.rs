@@ -101,6 +101,7 @@ impl NounStress {
     pub const fn is_stem_stressed(self, info: DeclInfo) -> bool {
         // Note: `is_nom_or_acc_inan` is called only when number is plural, i.e. when the
         // accusative case always maps to either nominative or genitive depending on animacy.
+        // (see declension::endings_tables::NOUN_LOOKUP, 'acc pl' section)
 
         match self {
             Self::A => true,

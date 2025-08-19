@@ -2,9 +2,10 @@
 
 use crate::util::slice_find;
 
-// All endings of nouns, adjectives and pronouns in one 55-char span
-const ENDINGS: &[u8] = "оегоговыеейёмойёйамийаямиемуююахяяхыйыхымихомуимиевёвью".as_bytes();
+// All endings of nouns, adjectives and pronouns in one 54-char slice
+const ENDINGS: &[u8] = "аямимиееговымихемуюьююыевяяхамийогойоейомуыхыйёвахёйём".as_bytes();
 
+// [case:6] [number:2] [gender:3] [stem type:8] = [total:288]
 #[rustfmt::skip]
 pub(crate) const NOUN_LOOKUP: [(u8, u8); 288] = [
     //    stem types: 1, 2,   3,    4,    5,    6,   7,   8
@@ -62,6 +63,7 @@ pub(crate) const NOUN_LOOKUP: [(u8, u8); 288] = [
     /* prp pl fem  */ ах, ях, ах, ах, ах, ях, ях, ях,
 ];
 
+// [case:6] [gender|plural:4] [stem type:4] = [total:96]
 #[rustfmt::skip]
 pub(crate) const PRONOUN_LOOKUP: [(u8, u8); 96] = [
     // stem types: 1,    2,   4,    6,
@@ -101,6 +103,7 @@ pub(crate) const PRONOUN_LOOKUP: [(u8, u8); 96] = [
     /* prp pl   */ ых, их,    их,    их,
 ];
 
+// [case+short form:7] [gender|plural:4] [stem type:7] = [total:196]
 #[rustfmt::skip]
 pub(crate) const ADJECTIVE_LOOKUP: [(u8, u8); 196] = [
     // stem types: 1,     2,  3,     4,     5,     6,  7
@@ -150,8 +153,8 @@ macro_rules! define_endings {
     ($($ident:ident)*) => ($(
         const $ident: (u8, u8) = encode_ending(stringify!($ident));
     )*);
-    ($($x:ident($s:ident, $uns:ident)),* $(,)?) => ($(
-        const $x: (u8, u8) = ($s.0, $uns.0);
+    ($($x:ident($un_str:ident, $str:ident)),* $(,)?) => ($(
+        const $x: (u8, u8) = ($un_str.0, $str.0);
     )*);
 }
 
@@ -188,8 +191,8 @@ const null: (u8, u8) = (0x01, 0x01);
 
 pub(crate) const fn get_ending_by_index(index: u8) -> &'static str {
     unsafe {
-        let start = ((index & 0x3F) << 1) as usize;
-        let end = start + ((index >> 6) << 1) as usize;
-        str::from_utf8_unchecked(ENDINGS.get(start..end).unwrap())
+        let start = ENDINGS.as_ptr().add(((index & 0x3F) << 1) as usize);
+        let len = ((index >> 5) & 0b110) as usize;
+        str::from_utf8_unchecked(std::slice::from_raw_parts(start, len))
     }
 }

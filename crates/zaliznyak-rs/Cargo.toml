@@ -13,3 +13,4 @@ readme = "README.md"
 [dependencies]
 thiserror = "2"
 bitflags = "2.9.2"
+memchr = "2.7.5"

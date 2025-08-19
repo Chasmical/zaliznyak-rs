@@ -5,14 +5,16 @@
 #![feature(const_try)]
 #![feature(const_from)]
 #![feature(const_clone)]
+#![feature(const_index)]
 #![feature(const_default)]
 #![feature(const_destruct)]
 #![feature(const_option_ops)]
 #![feature(const_result_trait_fn)]
+#![feature(const_eval_select)]
 #![allow(internal_features)]
 
 pub mod categories;
-pub mod stress;
 pub mod declension;
+pub mod stress;
 
 mod util;

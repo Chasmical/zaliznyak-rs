@@ -1,5 +1,7 @@
 use crate::stress::{AdjectiveStress, AnyDualStress, NounStress, PronounStress};
 
+mod endings;
+mod endings_tables;
 mod flags;
 mod fmt;
 mod from_str;

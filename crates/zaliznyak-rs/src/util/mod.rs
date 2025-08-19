@@ -1,8 +1,10 @@
 mod unsafe_buf;
 mod unsafe_parser;
+mod const_utils;
 
 pub(crate) use unsafe_buf::*;
 pub(crate) use unsafe_parser::*;
+pub(crate) use const_utils::*;
 
 macro_rules! enum_conversion {
     (

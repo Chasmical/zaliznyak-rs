@@ -110,3 +110,60 @@ impl AdjectiveDeclension {
         indices
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn noun_endings() {
+        let decl: NounDeclension = "2a".parse().unwrap(); // e.g. искатель
+        assert_eq!(decl.find_ending("В. ед. м. одуш.".parse().unwrap()), "я");
+        let decl: NounDeclension = "2b".parse().unwrap(); // e.g. огонь
+        assert_eq!(decl.find_ending("В. ед. м. неод.".parse().unwrap()), "ь");
+
+        let decl: NounDeclension = "6*a".parse().unwrap(); // e.g. ущелье
+        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "е");
+        let decl: NounDeclension = "6*b".parse().unwrap(); // e.g. питьё
+        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "ё");
+
+        let decl: NounDeclension = "4a".parse().unwrap(); // e.g. дача
+        assert_eq!(decl.find_ending("Р. мн. ж.".parse().unwrap()), "");
+        let decl: NounDeclension = "4b".parse().unwrap(); // e.g. лапша
+        assert_eq!(decl.find_ending("Р. мн. ж.".parse().unwrap()), "ей");
+    }
+
+    #[test]
+    fn pronoun_endings() {
+        let decl: PronounDeclension = "2*a".parse().unwrap(); // e.g. господень
+        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "е");
+        assert_eq!(decl.find_ending("Р. ед. с.".parse().unwrap()), "я");
+        assert_eq!(decl.find_ending("В. ед. с. неод.".parse().unwrap()), "е");
+        assert_eq!(decl.find_ending("В. ед. с. одуш.".parse().unwrap()), "его");
+
+        let decl: PronounDeclension = "4a".parse().unwrap(); // e.g. наш
+        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "е");
+        assert_eq!(decl.find_ending("Р. ед. с.".parse().unwrap()), "его");
+        assert_eq!(decl.find_ending("Д. ед. м.".parse().unwrap()), "ему");
+
+        let decl: PronounDeclension = "6*a".parse().unwrap(); // e.g. волчий
+        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "е");
+        let decl: PronounDeclension = "6b".parse().unwrap(); // e.g. свой
+        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "ё");
+    }
+
+    #[test]
+    fn adjective_endings() {
+        let decl: AdjectiveDeclension = "1a".parse().unwrap(); // e.g. шёлковый
+        assert_eq!(decl.find_ending("В. ед. м. неод.".parse().unwrap()), "ый");
+        assert_eq!(decl.find_ending("В. ед. м. одуш.".parse().unwrap()), "ого");
+        assert_eq!(decl.find_ending_short_form("ед. с.".parse().unwrap()), "о");
+        assert_eq!(decl.find_ending_short_form("мн.".parse().unwrap()), "ы");
+
+        let decl: AdjectiveDeclension = "4a/b'".parse().unwrap(); // e.g. свежий
+        assert_eq!(decl.find_ending("В. ед. м. неод.".parse().unwrap()), "ий");
+        assert_eq!(decl.find_ending("В. ед. м. одуш.".parse().unwrap()), "его");
+        assert_eq!(decl.find_ending_short_form("ед. с.".parse().unwrap()), "о");
+        assert_eq!(decl.find_ending_short_form("мн.".parse().unwrap()), "и");
+    }
+}

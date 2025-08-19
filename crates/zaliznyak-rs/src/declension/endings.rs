@@ -1,5 +1,5 @@
 use crate::{
-    categories::{Case, DeclInfo, Gender, IntoNumber},
+    categories::{DeclInfo, Gender, IntoNumber},
     declension::{
         AdjectiveDeclension, NounDeclension, NounStemType, PronounDeclension, PronounStemType,
         endings_tables::{ADJECTIVE_LOOKUP, NOUN_LOOKUP, PRONOUN_LOOKUP, get_ending_by_index},
@@ -7,11 +7,29 @@ use crate::{
 };
 
 impl NounDeclension {
-    pub const fn find_ending(self, info: DeclInfo) -> &'static str {
-        if self.flags.has_any_circled_digits()
-            && let Some(ending) = self.handle_circled_digits(info)
-        {
-            return ending;
+    pub const fn find_ending(mut self, mut info: DeclInfo) -> &'static str {
+        if self.flags.has_any_circled_digits() {
+            if info.is_plural() {
+                let is_gen = info.case.acc_is_gen(info);
+
+                // Plural, Nominative case, overridden by (1)
+                // Plural, Genitive case, overridden by (2)
+                if is_gen == Some(false) && self.flags.has_circled_one()
+                    || is_gen == Some(true) && self.flags.has_circled_two()
+                {
+                    info.gender = match info.gender {
+                        Gender::Masculine => Gender::Neuter,
+                        _ => Gender::Masculine,
+                    };
+                }
+            } else {
+                // Singular, stem type 7, overridden by (3)
+                if self.flags.has_circled_three() {
+                    // Note(hack): Stem type can be set to 6, to achieve 'е' endings
+                    // in Prepositional Feminine/Neuter and Dative Feminine forms.
+                    self.stem_type = NounStemType::Type6;
+                }
+            }
         }
 
         // Find un-stressed and stressed ending indices
@@ -20,66 +38,6 @@ impl NounDeclension {
         // Check if stress affects the choice of the ending, and return appropriate ending
         let is_stressed = un_str == str || self.stress.is_ending_stressed(info);
         get_ending_by_index(if is_stressed { str } else { un_str })
-    }
-
-    const fn handle_circled_digits(self, info: DeclInfo) -> Option<&'static str> {
-        if info.is_plural() {
-            #[allow(unused_parens)]
-            match info.case.acc_is_gen(info) {
-                // Nominative case overridden by (1)
-                Some(false) if self.flags.has_circled_one() => {
-                    let ty = self.stem_type.to_digit();
-
-                    return Some(match info.gender {
-                        // Note: only 1/2/3/4/6 are observed
-                        // TODO: if matches!(ty, 2 | 6) { "я" } else { "а" }
-                        //       (gender is effectively set to Neuter)
-                        Gender::Masculine => (if matches!(ty, 1 | 3..=5) { "а" } else { "я" }),
-                        // Note: only 1/3/4 are observed
-                        // TODO: if ty == 1 { "ы" } else { "и" }
-                        //       (gender is effectively set to Masculine or Feminine)
-                        Gender::Neuter => (if matches!(ty, 1 | 5 | 8) { "ы" } else { "и" }),
-                        // Note: not valid
-                        _ => return None,
-                    });
-                },
-                // Genitive case overriden by (2)
-                Some(true) if self.flags.has_circled_two() => {
-                    let ty = self.stem_type.to_digit();
-
-                    return Some(match info.gender {
-                        // Note: only 1/3/5 are observed
-                        // TODO: just replace with ""?
-                        //       (gender is effectively set to Neuter)
-                        Gender::Masculine => (if matches!(ty, 1 | 3..=5) { "" } else { "ь" }),
-                        // Note: only 1/3/5/6/7 are observed
-                        // TODO: (gender is effectively set to Masculine)
-                        Gender::Neuter => match ty {
-                            1 | 3 | 8 => "ов",
-                            4 | 5 if self.stress.is_ending_stressed(info) => "ов",
-                            2 | 6 | 7 if self.stress.is_ending_stressed(info) => "ёв",
-                            _ => "ев",
-                        },
-                        // Note: only 2/4 are observed
-                        // TODO: (gender is effectively set to Masculine)
-                        Gender::Feminine => "ей",
-                    });
-                },
-                // Other cases unaffected
-                _ => {},
-            };
-        } else {
-            // Singular, stem type 7, overriden by (3)
-            if self.flags.has_circled_three() && self.stem_type == NounStemType::Type7 {
-                // TODO: (stem type is effectively set to 6)
-                if info.case == Case::Prepositional
-                    || info.gender == Gender::Feminine && info.case == Case::Dative
-                {
-                    return Some("е");
-                }
-            }
-        }
-        None
     }
 
     const fn lookup_ending_indices(self, info: DeclInfo) -> (u8, u8) {

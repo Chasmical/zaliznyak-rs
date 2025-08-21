@@ -3,6 +3,7 @@ use crate::{
     categories::{DeclInfo, Gender, IntoNumber},
     declension::{NounDeclension, NounStemType},
     inflection_buf::InflectionBuf,
+    stress::NounStress,
 };
 
 impl NounDeclension {
@@ -13,6 +14,9 @@ impl NounDeclension {
             self.apply_unique_alternation(info, buf);
         }
 
+        // Special case for stem type 8: endings from the table may start with 'я', while
+        // the stem ends with a hissing consonant. Replace 'я' with 'а' in this case.
+        // E.g. мышь (жо 8e) - Д.мн. мышАм, not мышЯм.
         if self.stem_type == NounStemType::Type8
             && buf.stem().last().is_some_and(|x| x.is_hissing())
             && let [ya @ Utf8Letter::Я, ..] = buf.ending_mut()
@@ -23,7 +27,9 @@ impl NounDeclension {
         if self.flags.has_star() {
             self.apply_vowel_alternation(info, buf);
         }
-        if self.flags.has_alternating_yo() {
+
+        // The е/ё alternation is handled more efficiently in apply_unique_alternation()
+        if self.flags.has_alternating_yo() && !self.flags.has_circle() {
             self.apply_ye_yo_alternation(info, buf);
         }
     }
@@ -167,6 +173,59 @@ impl NounDeclension {
     }
 
     pub fn apply_ye_yo_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
-        todo!()
+        let (stem, ending) = buf.stem_and_ending_mut();
+
+        // If there's a 'ё' in the stem:
+        if let Some(yo) = stem.iter_mut().find(|x| **x == Utf8Letter::Ё) {
+            // If stress falls on the ending, unstress 'ё' in the stem into 'е'
+            if self.stress.is_ending_stressed(info) && ending.iter().any(|x| x.is_vowel()) {
+                *yo = Utf8Letter::Е;
+            }
+        } else {
+            // If there's no 'ё' in the stem, find the 'е' that can be stressed into 'ё'
+            let mut search_stem = stem;
+
+            // If there was vowel alternation, exclude the last two letters from the search,
+            // since a 'е' may have been inserted in there, that shouldn't be turned into 'ё'.
+            // E.g. метла (ж 1*d, ё) - Р.мн. мЁтел, not метЁл.
+            // TODO: See if the е/ё can be put before vowel alternation to avoid this workaround.
+            if self.flags.has_star()
+                && let [new_search_stem @ .., _, _] = search_stem
+            {
+                search_stem = new_search_stem;
+            }
+
+            // Find the LAST unstressed 'е' in the stem
+            let Some(ye) = search_stem.iter_mut().rfind(|x| **x == Utf8Letter::Е) else {
+                todo!("Handle absence of 'е' in the stem?")
+            };
+            // Extend ye's lifetime, to allow accessing stem() and then setting ye
+            let ye = unsafe { std::mem::transmute::<&mut Utf8Letter, &mut Utf8Letter>(ye) };
+
+            let stress_into_yo = {
+                if !ending.iter().any(|x| x.is_vowel()) {
+                    // If the ending can't receive stress, then stress 'е' in the stem into 'ё'
+                    true
+                } else {
+                    if matches!(self.stress, NounStress::F | NounStress::Fp | NounStress::Fpp) {
+                        // Special case for f/f′/f″ stress nouns: the last 'е' in the stem
+                        // can receive stress only if it's the only vowel in the stem.
+                        // E.g. железа (1f, ё) - И.мн. железы; середа (1f′, ё) - В.ед. середу;
+                        //       слеза (1f, ё) - И.мн. слёзы;    щека (3f′, ё) - В.ед. щёку.
+                        let first_vowel = buf.stem().iter().find(|x| x.is_vowel());
+
+                        first_vowel.is_some_and(|x| std::ptr::eq(ye, x))
+                    } else {
+                        // In all other cases, stress 'е' in the stem into 'ё'
+                        true
+                    }
+                }
+            };
+
+            // Stress 'е' in the stem into 'ё'
+            if stress_into_yo {
+                *ye = Utf8Letter::Ё;
+            }
+        }
     }
 }

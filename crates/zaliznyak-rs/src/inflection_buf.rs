@@ -17,17 +17,26 @@ impl InflectionBuf {
         Self { buf, stem_len: stem.len() }
     }
 
+    pub fn stem_and_ending(&self) -> (&[Utf8Letter], &[Utf8Letter]) {
+        let (stem, ending) = unsafe { self.buf.split_at_unchecked(self.stem_len) };
+        unsafe { (Utf8Letter::cast_slice(stem), Utf8Letter::cast_slice(ending)) }
+    }
+    pub fn stem_and_ending_mut(&mut self) -> (&mut [Utf8Letter], &mut [Utf8Letter]) {
+        let (stem, ending) = unsafe { self.buf.split_at_mut_unchecked(self.stem_len) };
+        unsafe { (Utf8Letter::cast_slice_mut(stem), Utf8Letter::cast_slice_mut(ending)) }
+    }
+
     pub fn stem(&self) -> &[Utf8Letter] {
-        unsafe { Utf8Letter::cast_slice(self.buf.get_unchecked(..self.stem_len)) }
+        self.stem_and_ending().0
     }
     pub fn stem_mut(&mut self) -> &mut [Utf8Letter] {
-        unsafe { Utf8Letter::cast_slice_mut(self.buf.get_unchecked_mut(..self.stem_len)) }
+        self.stem_and_ending_mut().0
     }
     pub fn ending(&self) -> &[Utf8Letter] {
-        unsafe { Utf8Letter::cast_slice(self.buf.get_unchecked(self.stem_len..)) }
+        self.stem_and_ending().1
     }
     pub fn ending_mut(&mut self) -> &mut [Utf8Letter] {
-        unsafe { Utf8Letter::cast_slice_mut(self.buf.get_unchecked_mut(self.stem_len..)) }
+        self.stem_and_ending_mut().1
     }
 
     pub fn append_to_ending(&mut self, append: &str) {

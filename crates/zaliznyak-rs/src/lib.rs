@@ -18,6 +18,7 @@ pub mod alphabet;
 pub mod categories;
 pub mod declension;
 pub mod inflection_buf;
+pub mod noun;
 pub mod stress;
 
 mod util;

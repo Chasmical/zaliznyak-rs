@@ -64,6 +64,11 @@ impl InflectionBuf {
         self.buf.splice((self.stem_len - 4)..(self.stem_len - 2), []);
         self.stem_len -= 2;
     }
+    pub fn remove_stem_char_at(&mut self, char_index: usize) {
+        let byte_index = char_index * 2;
+        self.buf.splice(byte_index..(byte_index + 2), []);
+        self.stem_len -= 2;
+    }
 
     pub fn finish(self) -> String {
         unsafe { String::from_utf8_unchecked(self.buf) }

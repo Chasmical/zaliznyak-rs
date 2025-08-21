@@ -1,6 +1,6 @@
 use crate::{
     alphabet::Utf8Letter,
-    categories::{DeclInfo, Gender, IntoNumber},
+    categories::{Case, DeclInfo, Gender, IntoNumber},
     declension::{NounDeclension, NounStemType},
     inflection_buf::InflectionBuf,
     stress::NounStress,
@@ -169,7 +169,148 @@ impl NounDeclension {
     }
 
     pub fn apply_vowel_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
-        todo!()
+        use Utf8Letter::*;
+
+        // Extend stem's lifetime, to allow accessing ending() and then setting stem chars
+        let stem = unsafe { std::mem::transmute::<_, &mut [Utf8Letter]>(buf.stem_mut()) };
+
+        if info.gender == Gender::Masculine
+            || info.gender == Gender::Feminine && self.stem_type == NounStemType::Type8
+        {
+            // Vowel alternation type A (masc any / fem 8*)
+
+            if info.is_singular() {
+                // Singular nominative form is unchanged (and accusative inanimate too)
+                if info.case.is_nom_or_acc_inan(info) {
+                    return;
+                }
+                // Singular instrumental for feminine 8* is unchanged (ending with 'ью')
+                if info.gender == Gender::Feminine && info.case == Case::Instrumental {
+                    return;
+                }
+            }
+
+            // Find the alternating LAST vowel
+            let Some(found) = stem.iter_mut().enumerate().rfind(|x| x.1.is_vowel()) else {
+                todo!("Handle absence of vowels in the stem?")
+            };
+            let (vowel_index, vowel) = found;
+
+            // Extend vowel's lifetime, to allow accessing stem() and then setting vowel
+            let vowel = unsafe { std::mem::transmute::<&mut Utf8Letter, &mut Utf8Letter>(vowel) };
+
+            match vowel {
+                О => {
+                    // 'о' is simply removed
+                    buf.remove_stem_char_at(vowel_index);
+                },
+                Е | Ё => {
+                    let preceding = stem.get(vowel_index - 1).copied();
+
+                    #[rustfmt::skip] #[allow(unused_parens)]
+                    if preceding.is_some_and(|x| x.is_vowel()) {
+                        // 1) is replaced with 'й' when after a vowel
+                        *vowel = Й;
+                    } else if (
+                        // 2)a) is replaced with 'ь', if masc 6*
+                        self.stem_type == NounStemType::Type6
+                        // 2)b) is replaced with 'ь', if masc 3* and after non-sibilant consonant
+                        || self.stem_type == NounStemType::Type3
+                            && preceding.is_some_and(|x| x.is_non_sibilant_consonant())
+                        // 2)c) is replaced with 'ь', when after 'л'
+                        || preceding == Some(Л)
+                    )
+                    {
+                        *vowel = Ь;
+                    };
+                },
+                _ => {
+                    todo!("Handle invalid vowel alternation")
+                },
+            };
+            return;
+        }
+        if matches!(info.gender, Gender::Neuter | Gender::Feminine)
+            && info.is_plural()
+            && info.case.is_gen_or_acc_an(info)
+        {
+            // Vowel alternation type B (neuter any / fem 1-7*)
+            // Affects only plural genitive forms
+
+            // TODO: 2*b and 2*f are exempt from vowel alternation for some reason?
+            // E.g. песня (ж 2*a) - Р.мн. песен; лыжня (ж 2*b) - Р.мн. лыжней, not лыжен.
+            if self.stem_type == NounStemType::Type2
+                && matches!(self.stress, NounStress::B | NounStress::F)
+            {
+                return;
+            }
+            // If (2) flag changed the ending's gender, don't alternate the vowel,
+            // since it won't be consistent with the ending of different gender.
+            if self.flags.has_circled_two() {
+                return;
+            }
+
+            // 1) stem type 6: stem's ending 'ь' is replaced with 'е' or 'и'.
+            // E.g. лгунья (ж 6*a) - Р.мн. лгуний; статья (ж 6*b) - Р.мн. статей.
+            if self.stem_type == NounStemType::Type6 {
+                if let [.., last @ Ь] = stem {
+                    let ending_stressed = self.stress.is_ending_stressed(info);
+                    *last = if ending_stressed { Е } else { И };
+                }
+                // Alternations in stem type 6 happen only with 'ь'.
+                return;
+            }
+
+            // Special case for feminine 2*a, ending with 'ня': remove 'ь' ending.
+            // E.g. вафля (2*a) - Р.мн. вафель; башня (2*a) - Р.мн. башен, not башень.
+            // Note: only stem type 2*a nouns can have 'ь' as ending here.
+            // (see declension::endings_tables::NOUN_LOOKUP, 'gen pl' section)
+            if let [Ь] = buf.ending()
+                && let [.., Н] = stem
+            {
+                buf.replace_ending("");
+            }
+
+            // At this point, stem type is in range 1..=5 (consonant-ending stems).
+            // Stem type 6 was completely handled earlier, and 7* nouns don't exist.
+            // So, it's safe to assume that the last stem char is a consonant.
+            let last = stem.last().copied();
+            let pre_last = stem.get_mut(stem.len() - 2);
+
+            // 2) if 'ь'/'й' precedes the last consonant, replace 'ь'/'й' with 'ё' or 'е'.
+            // E.g. гайка (ж 3*a) - Р.мн. гаек; сальце (с 5*a) - Р.мн. салец.
+            if let Some(pre_last @ (Ь | Й)) = pre_last {
+                let stressed = last != Some(Ц) && self.stress.is_ending_stressed(info);
+                *pre_last = if stressed { Ё } else { Е };
+                return;
+            }
+
+            // 3) in all other cases, insert a letter between two last chars
+            let insert_between = {
+                // 3)a) after 'к'/'г'/'х' insert 'о'
+                if let Some(К | Г | Х) = pre_last {
+                    О
+                }
+                // 3)b) before 'к'/'г'/'х', but not after sibilant, insert 'о'
+                else if let Some(К | Г | Х) = last
+                    && let Some(ref pre_last) = pre_last
+                    && pre_last.is_sibilant()
+                {
+                    О
+                }
+                // 3)c) if unstressed insert 'е', and if stressed - 'е'
+                else {
+                    // But after 'ц' always insert 'е'
+                    if last == Some(Ц) || self.stress.is_stem_stressed(info) {
+                        Е
+                    } else {
+                        // And after hissing consonants insert 'о' instead of 'ё'
+                        if pre_last.is_some_and(|x| x.is_hissing()) { О } else { Ё }
+                    }
+                }
+            };
+            buf.insert_between_last_two_stem_chars(insert_between.as_str());
+        }
     }
 
     pub fn apply_ye_yo_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {

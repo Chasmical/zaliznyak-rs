@@ -1,7 +1,6 @@
 use crate::{
     declension::{
-        AdjectiveDeclension, AnyStemType, Declension, DeclensionFlags, NounDeclension,
-        PronounDeclension,
+        AdjectiveDeclension, AnyStemType, DeclensionFlags, NounDeclension, PronounDeclension,
     },
     stress::{AnyDualStress, DUAL_STRESS_MAX_LEN},
     util::UnsafeBuf,
@@ -45,8 +44,8 @@ impl DeclensionFlags {
     }
 }
 
-// Longest form (w/ prefix): п 7°*f″/f″①②③, ё (29 bytes, 16 chars)
-pub const DECLENSION_MAX_LEN: usize = "п 7".len() + DECLENSION_FLAGS_MAX_LEN + DUAL_STRESS_MAX_LEN;
+// Longest form: 7°*f″/f″①②③, ё (26 bytes, 14 chars)
+pub const DECLENSION_MAX_LEN: usize = 1 + DECLENSION_FLAGS_MAX_LEN + DUAL_STRESS_MAX_LEN;
 
 const fn fmt_declension_any(
     dst: &mut [u8; DECLENSION_MAX_LEN],
@@ -83,31 +82,6 @@ impl AdjectiveDeclension {
         fmt_declension_any(dst, self.stem_type.into(), self.stress.abbr(), self.flags)
     }
 }
-impl Declension {
-    pub const fn fmt_to(self, dst: &mut [u8; DECLENSION_MAX_LEN]) -> &mut str {
-        let mut dst = UnsafeBuf::new(dst);
-
-        let (stem_type, stress, flags) = match self {
-            Self::Noun(decl) => {
-                // no prefix for nouns
-                (decl.stem_type.into(), decl.stress.into(), decl.flags)
-            },
-            Self::Pronoun(decl) => {
-                dst.push_str("мс ");
-                (decl.stem_type.into(), decl.stress.into(), decl.flags)
-            },
-            Self::Adjective(decl) => {
-                dst.push_str("п ");
-                (decl.stem_type.into(), decl.stress.abbr(), decl.flags)
-            },
-        };
-
-        let len = fmt_declension_any(dst.chunk(), stem_type, stress, flags).len();
-        dst.forward(len);
-
-        dst.finish()
-    }
-}
 
 impl std::fmt::Display for DeclensionFlags {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -125,11 +99,6 @@ impl std::fmt::Display for PronounDeclension {
     }
 }
 impl std::fmt::Display for AdjectiveDeclension {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        self.fmt_to(&mut [0; _]).fmt(f)
-    }
-}
-impl std::fmt::Display for Declension {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         self.fmt_to(&mut [0; _]).fmt(f)
     }

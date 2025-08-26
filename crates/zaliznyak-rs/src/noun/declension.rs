@@ -1,10 +1,37 @@
 use crate::{
     alphabet::Utf8Letter,
-    categories::{Case, DeclInfo, Gender, IntoNumber},
-    declension::{NounDeclension, NounStemType},
+    categories::{Case, CaseEx, DeclInfo, Gender, IntoNumber, Number},
+    declension::{Declension, NounDeclension, NounStemType},
     inflection_buf::InflectionBuf,
+    noun::Noun,
     stress::NounStress,
 };
+
+impl Noun {
+    pub fn inflect(&self, case: CaseEx, number: Number) -> String {
+        let mut buf = InflectionBuf::from_stem(&self.stem);
+
+        if let Some(decl) = self.info.declension {
+            let number = self.info.tantum.unwrap_or(number);
+            let (case, number) = case.normalize_with(number);
+
+            let info = DeclInfo {
+                case,
+                number,
+                gender: self.info.declension_gender,
+                animacy: self.info.animacy,
+            };
+
+            match decl {
+                Declension::Noun(decl) => decl.inflect(info, &mut buf),
+                Declension::Adjective(_) => todo!("Adjective declension for nouns"), // TODO
+                Declension::Pronoun(_) => unimplemented!(), // Nouns don't decline by pronoun declension
+            };
+        }
+
+        buf.finish()
+    }
+}
 
 impl NounDeclension {
     pub fn inflect(self, info: DeclInfo, buf: &mut InflectionBuf) {
@@ -368,29 +395,15 @@ impl NounDeclension {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{categories::Number, noun::NounInfo};
 
     fn decl(word: &str, info: &str) -> [String; 2] {
-        let stem = NounStemType::identify(word).unwrap().0;
-        let info: NounInfo = info.parse().unwrap();
-        let decl = info.declension.unwrap().as_noun().unwrap();
+        let noun = Noun {
+            stem: NounStemType::identify(word).unwrap().0.into(),
+            info: info.parse().unwrap(),
+        };
 
-        Number::VALUES.map(|number| {
-            Case::VALUES
-                .map(|case| {
-                    let info = DeclInfo {
-                        case,
-                        number,
-                        gender: info.declension_gender,
-                        animacy: info.animacy,
-                    };
-
-                    let mut buf = InflectionBuf::from_stem(stem);
-                    decl.inflect(info, &mut buf);
-                    buf.finish()
-                })
-                .join(", ")
-        })
+        Number::VALUES
+            .map(|number| Case::VALUES.map(|case| noun.inflect(case.into(), number)).join(", "))
     }
 
     #[test]

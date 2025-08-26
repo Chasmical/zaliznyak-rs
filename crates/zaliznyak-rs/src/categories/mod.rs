@@ -82,3 +82,41 @@ pub enum Person {
     Second,
     Third,
 }
+
+impl CaseEx {
+    pub const VALUES: [Self; 9] = [
+        Self::Nominative,
+        Self::Genitive,
+        Self::Dative,
+        Self::Accusative,
+        Self::Instrumental,
+        Self::Prepositional,
+        Self::Partitive,
+        Self::Translative,
+        Self::Locative,
+    ];
+}
+impl Case {
+    pub const VALUES: [Self; 6] = [
+        Self::Nominative,
+        Self::Genitive,
+        Self::Dative,
+        Self::Accusative,
+        Self::Instrumental,
+        Self::Prepositional,
+    ];
+}
+
+impl GenderEx {
+    pub const VALUES: [Self; 4] = [Self::Masculine, Self::Neuter, Self::Feminine, Self::Common];
+}
+impl Gender {
+    pub const VALUES: [Self; 3] = [Self::Masculine, Self::Neuter, Self::Feminine];
+}
+
+impl Animacy {
+    pub const VALUES: [Self; 2] = [Self::Inanimate, Self::Animate];
+}
+impl Number {
+    pub const VALUES: [Self; 2] = [Self::Singular, Self::Plural];
+}

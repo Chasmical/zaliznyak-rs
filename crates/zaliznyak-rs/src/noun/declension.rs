@@ -123,7 +123,7 @@ impl NounDeclension {
                     }
                 }
             },
-            // -очек (щеночек, внучоночек)
+            // -очек (щеночек, внучочек)
             [.., preceding, o @ О, ch @ Ч, ie @ Е, К] => {
                 if info.is_plural() {
                     // Transform '-очек' into '-[ая]тк'
@@ -155,12 +155,15 @@ impl NounDeclension {
                     // Add '[её]н' suffix to the stem
                     buf.append_to_stem(if yo { "ён" } else { "ен" });
                 } else {
-                    // Replace nominative singular ending 'ь' with 'я'
-                    if let [ending @ Ь] = buf.ending_mut() {
-                        *ending = Я;
+                    if info.case.is_nom_or_acc_inan(info) {
+                        // Replace nominative singular ending 'ь'/'о' with 'я'
+                        buf.replace_ending("я");
                     } else {
                         // In non-nominative forms, add 'ен' suffix to the stem
                         buf.append_to_stem("ен");
+                        // Instrumental case - ending 'ем', other cases - 'и'
+                        let is_ins = info.case == Case::Instrumental;
+                        buf.replace_ending(if is_ins { "ем" } else { "и" });
                     }
                 }
             },
@@ -219,9 +222,10 @@ impl NounDeclension {
                             && preceding.is_some_and(|x| x.is_non_sibilant_consonant())
                         // 2)c) is replaced with 'ь', when after 'л'
                         || preceding == Some(Л)
-                    )
-                    {
+                    ) {
                         *vowel = Ь;
+                    } else {
+                        buf.remove_stem_char_at(vowel_index);
                     };
                 },
                 _ => {
@@ -294,7 +298,7 @@ impl NounDeclension {
                 // 3)b) before 'к'/'г'/'х', but not after sibilant, insert 'о'
                 else if let Some(К | Г | Х) = last
                     && let Some(ref pre_last) = pre_last
-                    && pre_last.is_sibilant()
+                    && !pre_last.is_sibilant()
                 {
                     О
                 }
@@ -356,9 +360,10 @@ impl NounDeclension {
                         let first_vowel = buf.stem().iter().find(|x| x.is_vowel());
 
                         first_vowel.is_some_and(|x| std::ptr::eq(ye, x))
+                            && self.stress.is_stem_stressed(info)
                     } else {
                         // In all other cases, stress 'е' in the stem into 'ё'
-                        true
+                        self.stress.is_stem_stressed(info)
                     }
                 }
             };

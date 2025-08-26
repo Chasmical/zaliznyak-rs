@@ -8,10 +8,10 @@ const ENDINGS: &[u8] = "аямимиееговымихемуюьююыевяях
 // [case:6] [number:2] [gender:3] [stem type:8] = [total:288]
 #[rustfmt::skip]
 pub(crate) const NOUN_LOOKUP: [(u8, u8); 288] = [
-    //    stem types: 1, 2,   3,    4,    5,    6,   7,   8
-    /* nom sg masc */ е, ь,   null, null, null, й,   й,   ь,
-    /* nom sg n    */ о, е_ё, о,    е_о,  е_о,  е_ё, е_ё, о,
-    /* nom sg fem  */ а, я,   а,    а,    а,    я,   я,   ь,
+    //    stem types: 1,    2,   3,    4,    5,    6,   7,   8
+    /* nom sg masc */ null, ь,   null, null, null, й,   й,   ь,
+    /* nom sg n    */ о,    е_ё, о,    е_о,  е_о,  е_ё, е_ё, о,
+    /* nom sg fem  */ а,    я,   а,    а,    а,    я,   я,   ь,
     //    stem types: 1, 2, 3, 4, 5, 6, 7, 8
     /* nom pl masc */ ы, и, и, и, ы, и, и, и,
     /* nom pl n    */ а, я, а, а, а, я, я, а,

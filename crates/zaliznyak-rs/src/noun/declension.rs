@@ -24,13 +24,13 @@ impl NounDeclension {
             *ya = Utf8Letter::А;
         }
 
-        if self.flags.has_star() {
-            self.apply_vowel_alternation(info, buf);
-        }
-
         // The е/ё alternation is handled more efficiently in apply_unique_alternation()
         if self.flags.has_alternating_yo() && !self.flags.has_circle() {
             self.apply_ye_yo_alternation(info, buf);
+        }
+
+        if self.flags.has_star() {
+            self.apply_vowel_alternation(info, buf);
         }
     }
 
@@ -328,20 +328,9 @@ impl NounDeclension {
             }
         } else {
             // If there's no 'ё' in the stem, find the 'е' that can be stressed into 'ё'
-            let mut search_stem = stem;
-
-            // If there was vowel alternation, exclude the last two letters from the search,
-            // since a 'е' may have been inserted in there, that shouldn't be turned into 'ё'.
-            // E.g. метла (ж 1*d, ё) - Р.мн. мЁтел, not метЁл.
-            // TODO: See if the е/ё can be put before vowel alternation to avoid this workaround.
-            if self.flags.has_star()
-                && let [new_search_stem @ .., _, _] = search_stem
-            {
-                search_stem = new_search_stem;
-            }
 
             // Find the LAST unstressed 'е' in the stem
-            let Some(ye) = search_stem.iter_mut().rfind(|x| **x == Utf8Letter::Е) else {
+            let Some(ye) = stem.iter_mut().rfind(|x| **x == Utf8Letter::Е) else {
                 todo!("Handle absence of 'е' in the stem?")
             };
             // Extend ye's lifetime, to allow accessing stem() and then setting ye

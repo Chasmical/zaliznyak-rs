@@ -1,7 +1,6 @@
 use crate::{
     declension::{
-        AdjectiveDeclension, AnyStemType, Declension, DeclensionFlags, DeclensionKind,
-        NounDeclension, PronounDeclension,
+        AdjectiveDeclension, AnyStemType, DeclensionFlags, NounDeclension, PronounDeclension,
     },
     stress::{AnyDualStress, ParseStressError},
     util::{PartialFromStr, UnsafeParser, utf8_bytes},
@@ -144,24 +143,6 @@ impl const PartialFromStr for AdjectiveDeclension {
         parse_declension_any(parser)?.into_adjective()
     }
 }
-impl const PartialFromStr for Declension {
-    fn partial_from_str(parser: &mut UnsafeParser) -> Result<Self, Self::Err> {
-        let (kind, len) = match parser.peek::<5>() {
-            Some(&[0xD0, 0xBC, 0xD1, 0x81, b' ']) => (DeclensionKind::Pronoun, 5), // "мс "
-            Some(&[0xD0, 0xBF, b' ', _, _]) => (DeclensionKind::Adjective, 3),     // "п "
-            _ => (DeclensionKind::Noun, 0u8),
-        };
-        parser.forward(len as usize);
-
-        let decl = parse_declension_any(parser)?;
-
-        Ok(match kind {
-            DeclensionKind::Noun => Declension::Noun(decl.into_noun()?),
-            DeclensionKind::Pronoun => Declension::Pronoun(decl.into_pronoun()?),
-            DeclensionKind::Adjective => Declension::Adjective(decl.into_adjective()?),
-        })
-    }
-}
 
 impl std::str::FromStr for DeclensionFlags {
     type Err = ParseDeclensionError;
@@ -182,12 +163,6 @@ impl std::str::FromStr for PronounDeclension {
     }
 }
 impl std::str::FromStr for AdjectiveDeclension {
-    type Err = ParseDeclensionError;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::from_str_or_err(s, Self::Err::Invalid)
-    }
-}
-impl std::str::FromStr for Declension {
     type Err = ParseDeclensionError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_str_or_err(s, Self::Err::Invalid)
@@ -295,29 +270,5 @@ mod tests {
 
         assert_err("2c", Error::IncompatibleStress);
         assert_err("2a/f", Error::IncompatibleStress);
-    }
-
-    #[test]
-    fn parse_declension() {
-        let decl = Declension::Noun(NounDeclension {
-            stem_type: NounStemType::Type3,
-            stress: NounStress::Bp,
-            flags: DeclensionFlags::CIRCLE | DeclensionFlags::ALTERNATING_YO,
-        });
-        assert_eq!("3°b′, ё".parse(), Ok(decl));
-
-        let decl = Declension::Pronoun(PronounDeclension {
-            stem_type: PronounStemType::Type6,
-            stress: PronounStress::F,
-            flags: DeclensionFlags::STAR | DeclensionFlags::CIRCLED_ONE,
-        });
-        assert_eq!("мс 6*f(1)".parse(), Ok(decl));
-
-        let decl = Declension::Adjective(AdjectiveDeclension {
-            stem_type: AdjectiveStemType::Type4,
-            stress: AdjectiveStress::B_Ap,
-            flags: DeclensionFlags::STAR | DeclensionFlags::CIRCLED_TWO,
-        });
-        assert_eq!("п 4*b/a′(2)".parse(), Ok(decl));
     }
 }

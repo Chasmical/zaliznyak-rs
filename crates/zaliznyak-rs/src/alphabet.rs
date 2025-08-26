@@ -163,3 +163,14 @@ impl Utf8Letter {
         self.to_letter().is_consonant()
     }
 }
+
+pub(crate) mod utf8 {
+    use super::Utf8Letter;
+
+    macro_rules! define_consts {
+        ($($letter:ident)+) => ($(
+            pub const $letter: [u8; 2] = Utf8Letter::$letter.to_utf8();
+        )+);
+    }
+    define_consts! { А Б В Г Д Е Ё Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я }
+}

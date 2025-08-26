@@ -13,15 +13,15 @@ impl NounInfo {
     pub const fn fmt_to<'a>(&self, dst: &'a mut [u8; NOUN_INFO_MAX_LEN]) -> &'a mut str {
         let mut dst = UnsafeBuf::new(dst);
 
-        // Include braces if the declension is non-noun
-        let mut need_braces = matches!(self.declension, Some(Declension::Adjective(_)));
+        // Include brackets if the declension is non-noun
+        let mut need_brackets = matches!(self.declension, Some(Declension::Adjective(_)));
 
-        // If it's a pluralia tantum, append 'мн.'
+        // If it's a plurale tantum, append 'мн.'
         if self.tantum == Some(Number::Plural) {
             dst.push_str("мн.");
-            need_braces = self.declension != None;
+            need_brackets = self.declension != None;
 
-            // If gender and animacy won't be specified in braces (0 or adjective declension),
+            // If gender and animacy won't be specified in brackets (0 or adjective declension),
             // include animacy right after 'мн.': 'мн. неод.', 'мн. одуш.'.
             if matches!(self.declension, None | Some(Declension::Adjective(_))) {
                 dst.push_str(match self.animacy {
@@ -40,24 +40,24 @@ impl NounInfo {
             if self.gender != GenderEx::Common && self.animacy == Animacy::Animate {
                 dst.push('о');
             }
-            // If declension gender doesn't match actual gender, make sure to include it in braces
+            // If declension gender doesn't match actual gender, make sure to include it in brackets
             if self.declension_gender != self.gender.normalize() {
-                need_braces = true;
+                need_brackets = true;
             }
         }
 
         // Space between gender/animacy and declension
         dst.push(' ');
 
-        if need_braces {
+        if need_brackets {
             dst.push('<');
         }
 
         if let Some(declension) = self.declension {
             match declension {
                 Declension::Noun(decl) => {
-                    // Append overridden gender and animacy, but only if in braces
-                    if need_braces {
+                    // Append overridden gender and animacy, but only if in brackets
+                    if need_brackets {
                         dst.push(match self.declension_gender {
                             Gender::Masculine => 'м',
                             Gender::Neuter => 'с',
@@ -87,11 +87,11 @@ impl NounInfo {
             dst.push('0');
         }
 
-        // If it's a singularia tantum, append '—'
+        // If it's a singulare tantum, append '—'
         if self.tantum == Some(Number::Singular) {
             dst.push('—');
         }
-        if need_braces {
+        if need_brackets {
             dst.push('>');
         }
 
@@ -201,7 +201,7 @@ mod tests {
             "мн. <мо 3*a>",
         );
 
-        // Pluralia tantums, with animacy specified
+        // Plurale tantums, with animacy specified
         assert_eq!(
             NounInfo {
                 // Note: gender isn't used here at all

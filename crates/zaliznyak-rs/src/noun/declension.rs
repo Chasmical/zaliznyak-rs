@@ -2,14 +2,33 @@ use crate::{
     alphabet::Utf8Letter,
     categories::{Case, CaseEx, DeclInfo, Gender, IntoNumber, Number},
     declension::{Declension, NounDeclension, NounStemType},
-    inflection_buf::InflectionBuf,
+    inflection_buf::{INFLECTION_MAX_EXTRA_LEN, InflectionBuf},
     noun::Noun,
     stress::NounStress,
+    util::StackBuf,
 };
 
 impl Noun {
     pub fn inflect(&self, case: CaseEx, number: Number) -> String {
-        let mut buf = InflectionBuf::from_stem(&self.stem);
+        let required_len = self.stem.len() + INFLECTION_MAX_EXTRA_LEN;
+        let mut buf = StackBuf::<u8, 64>::new(required_len);
+        let len = self.inflect_into(case, number, buf.as_mut_slice()).len();
+        buf.into_string(len)
+    }
+
+    pub fn inflect_into_string<'a>(&self, case: CaseEx, number: Number, s: &'a mut String) -> &'a mut str {
+        self.inflect_into_vec(case, number, unsafe { s.as_mut_vec() })
+    }
+    pub fn inflect_into_vec<'a>(&self, case: CaseEx, number: Number, vec: &'a mut Vec<u8>) -> &'a mut str {
+        vec.reserve(self.stem.len() + INFLECTION_MAX_EXTRA_LEN);
+        let dst = unsafe { std::slice::from_raw_parts_mut(vec.as_mut_ptr().add(vec.len()), vec.capacity()) };
+        let slice = self.inflect_into(case, number, dst);
+        unsafe { vec.set_len(vec.len() + slice.len()) };
+        slice
+    }
+
+    pub fn inflect_into<'a>(&self, case: CaseEx, number: Number, dst: &'a mut [u8]) -> &'a mut str {
+        let mut buf = InflectionBuf::new(&self.stem, dst);
 
         if let Some(decl) = self.info.declension {
             let number = self.info.tantum.unwrap_or(number);

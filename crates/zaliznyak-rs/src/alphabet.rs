@@ -164,6 +164,7 @@ impl Utf8Letter {
     }
 }
 
+#[allow(dead_code)]
 pub(crate) mod utf8 {
     use super::Utf8Letter;
 

@@ -1,8 +1,10 @@
 mod const_utils;
+mod stack_buf;
 mod unsafe_buf;
 mod unsafe_parser;
 
 pub(crate) use const_utils::*;
+pub(crate) use stack_buf::*;
 pub(crate) use unsafe_buf::*;
 pub(crate) use unsafe_parser::*;
 

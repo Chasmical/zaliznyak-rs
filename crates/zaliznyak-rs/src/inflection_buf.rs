@@ -1,7 +1,5 @@
 use crate::alphabet::Utf8Letter;
 
-pub(crate) const INFLECTION_MAX_EXTRA_LEN: usize = 5 * 2;
-
 #[derive(Debug)]
 pub struct InflectionBuf<'a> {
     start: &'a mut u8,
@@ -10,20 +8,25 @@ pub struct InflectionBuf<'a> {
 }
 
 impl<'a> InflectionBuf<'a> {
-    pub fn new(stem: &str, buf: &'a mut [u8]) -> Self {
-        let required_len = stem.len() + INFLECTION_MAX_EXTRA_LEN;
-        assert!(buf.len() >= required_len);
-        unsafe { std::ptr::copy_nonoverlapping(stem.as_ptr(), buf.as_mut_ptr(), stem.len()) };
-
-        Self { start: unsafe { &mut *buf.as_mut_ptr() }, len: stem.len(), stem_len: stem.len() }
+    pub const fn max_char_len_for_noun(stem_len: usize) -> usize {
+        stem_len / 2 + 5
     }
 
-    pub fn stem_and_ending(&self) -> (&[Utf8Letter], &[Utf8Letter]) {
+    pub fn from_stem_in(stem: &str, buf: &'a mut [Utf8Letter]) -> Self {
+        let required_len = Self::max_char_len_for_noun(stem.len());
+        assert!(buf.len() * 2 >= required_len);
+        let buf = buf.as_mut_ptr().cast();
+
+        unsafe { std::ptr::copy_nonoverlapping(stem.as_ptr(), buf, stem.len()) };
+        Self { start: unsafe { &mut *buf }, len: stem.len(), stem_len: stem.len() }
+    }
+
+    pub const fn stem_and_ending(&self) -> (&[Utf8Letter], &[Utf8Letter]) {
         let slice = unsafe { std::slice::from_raw_parts(self.start, self.len) };
         let (stem, ending) = unsafe { slice.split_at_unchecked(self.stem_len) };
         unsafe { (Utf8Letter::cast_slice(stem), Utf8Letter::cast_slice(ending)) }
     }
-    pub fn stem_and_ending_mut(&mut self) -> (&mut [Utf8Letter], &mut [Utf8Letter]) {
+    pub const fn stem_and_ending_mut(&mut self) -> (&mut [Utf8Letter], &mut [Utf8Letter]) {
         let slice = unsafe { std::slice::from_raw_parts_mut(self.start, self.len) };
         let (stem, ending) = unsafe { slice.split_at_mut_unchecked(self.stem_len) };
         unsafe { (Utf8Letter::cast_slice_mut(stem), Utf8Letter::cast_slice_mut(ending)) }

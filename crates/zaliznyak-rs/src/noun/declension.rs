@@ -2,7 +2,7 @@ use crate::{
     alphabet::Utf8Letter,
     categories::{Case, CaseEx, DeclInfo, Gender, IntoNumber, Number},
     declension::{Declension, NounDeclension, NounStemType},
-    inflection_buf::{INFLECTION_MAX_EXTRA_LEN, InflectionBuf},
+    inflection_buf::InflectionBuf,
     noun::Noun,
     stress::NounStress,
     util::StackBuf,
@@ -10,25 +10,18 @@ use crate::{
 
 impl Noun {
     pub fn inflect(&self, case: CaseEx, number: Number) -> String {
-        let required_len = self.stem.len() + INFLECTION_MAX_EXTRA_LEN;
-        let mut buf = StackBuf::<u8, 64>::new(required_len);
+        let required_char_len = InflectionBuf::max_char_len_for_noun(self.stem.len());
+        let mut buf = StackBuf::<Utf8Letter, 31>::new(required_char_len);
+
         let len = self.inflect_into(case, number, buf.as_mut_slice()).len();
+
+        // TODO: don't allocate String, instead return some InflectedNoun struct with stem/ending
+        // fns, and implementing IntoIterator<&str>, to allow using it in String::extend.
         buf.into_string(len)
     }
 
-    pub fn inflect_into_string<'a>(&self, case: CaseEx, number: Number, s: &'a mut String) -> &'a mut str {
-        self.inflect_into_vec(case, number, unsafe { s.as_mut_vec() })
-    }
-    pub fn inflect_into_vec<'a>(&self, case: CaseEx, number: Number, vec: &'a mut Vec<u8>) -> &'a mut str {
-        vec.reserve(self.stem.len() + INFLECTION_MAX_EXTRA_LEN);
-        let dst = unsafe { std::slice::from_raw_parts_mut(vec.as_mut_ptr().add(vec.len()), vec.capacity()) };
-        let slice = self.inflect_into(case, number, dst);
-        unsafe { vec.set_len(vec.len() + slice.len()) };
-        slice
-    }
-
-    pub fn inflect_into<'a>(&self, case: CaseEx, number: Number, dst: &'a mut [u8]) -> &'a mut str {
-        let mut buf = InflectionBuf::new(&self.stem, dst);
+    pub fn inflect_into<'a>(&self, case: CaseEx, number: Number, dst: &'a mut [Utf8Letter]) -> &'a mut str {
+        let mut buf = InflectionBuf::from_stem_in(&self.stem, dst);
 
         if let Some(decl) = self.info.declension {
             let number = self.info.tantum.unwrap_or(number);

@@ -1,3 +1,6 @@
+use crate::alphabet::Utf8Letter;
+
+#[repr(u8)]
 pub enum StackBuf<T, const N: usize> {
     Stack([T; N]),
     Heap(Vec<T>),
@@ -9,6 +12,13 @@ impl<T: Copy, const N: usize> StackBuf<T, N> {
             Self::Stack([unsafe { std::mem::MaybeUninit::uninit().assume_init() }; N])
         } else {
             Self::Heap(Vec::with_capacity(required_len))
+        }
+    }
+
+    pub const fn as_ptr(&self) -> *const T {
+        match self {
+            Self::Stack(buf) => buf.as_ptr(),
+            Self::Heap(v) => v.as_ptr(),
         }
     }
 
@@ -38,8 +48,9 @@ impl<T: Copy, const N: usize> StackBuf<T, N> {
     }
 }
 
-impl<const N: usize> StackBuf<u8, N> {
+impl<const N: usize> StackBuf<Utf8Letter, N> {
     pub fn into_string(self, len: usize) -> String {
-        unsafe { String::from_utf8_unchecked(self.into_vec(len)) }
+        let slice = unsafe { std::slice::from_raw_parts(self.as_ptr().cast(), len) };
+        unsafe { String::from_utf8_unchecked(slice.to_vec()) }
     }
 }

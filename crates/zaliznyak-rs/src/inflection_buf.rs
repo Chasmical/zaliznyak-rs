@@ -1,8 +1,8 @@
-use crate::alphabet::Utf8Letter;
+use crate::{alphabet::Utf8Letter, noun::InflectedNoun};
 
 #[derive(Debug)]
 pub struct InflectionBuf<'a> {
-    start: &'a mut u8,
+    start: &'a mut Utf8Letter,
     len: usize,
     stem_len: usize,
 }
@@ -14,22 +14,20 @@ impl<'a> InflectionBuf<'a> {
 
     pub fn from_stem_in(stem: &str, buf: &'a mut [Utf8Letter]) -> Self {
         let required_len = Self::max_char_len_for_noun(stem.len());
-        assert!(buf.len() * 2 >= required_len);
-        let buf = buf.as_mut_ptr().cast();
+        assert!(buf.len() >= required_len);
+        let buf = buf.as_mut_ptr();
 
-        unsafe { std::ptr::copy_nonoverlapping(stem.as_ptr(), buf, stem.len()) };
+        unsafe { std::ptr::copy_nonoverlapping(stem.as_ptr(), buf.cast(), stem.len()) };
         Self { start: unsafe { &mut *buf }, len: stem.len(), stem_len: stem.len() }
     }
 
     pub const fn stem_and_ending(&self) -> (&[Utf8Letter], &[Utf8Letter]) {
-        let slice = unsafe { std::slice::from_raw_parts(self.start, self.len) };
-        let (stem, ending) = unsafe { slice.split_at_unchecked(self.stem_len) };
-        unsafe { (Utf8Letter::cast_slice(stem), Utf8Letter::cast_slice(ending)) }
+        let slice = unsafe { std::slice::from_raw_parts(self.start, self.len / 2) };
+        unsafe { slice.split_at_unchecked(self.stem_len / 2) }
     }
     pub const fn stem_and_ending_mut(&mut self) -> (&mut [Utf8Letter], &mut [Utf8Letter]) {
-        let slice = unsafe { std::slice::from_raw_parts_mut(self.start, self.len) };
-        let (stem, ending) = unsafe { slice.split_at_mut_unchecked(self.stem_len) };
-        unsafe { (Utf8Letter::cast_slice_mut(stem), Utf8Letter::cast_slice_mut(ending)) }
+        let slice = unsafe { std::slice::from_raw_parts_mut(self.start, self.len / 2) };
+        unsafe { slice.split_at_mut_unchecked(self.stem_len / 2) }
     }
 
     pub fn stem(&self) -> &[Utf8Letter] {
@@ -46,12 +44,12 @@ impl<'a> InflectionBuf<'a> {
     }
 
     fn copy_within(&mut self, from: usize, to: usize, len: usize) {
-        let start = &raw mut *self.start;
-        unsafe { std::ptr::copy(start.add(from), start.add(to), len); }
+        let start = (&raw mut *self.start).cast::<u8>();
+        unsafe { std::ptr::copy(start.add(from), start.add(to), len) };
     }
     fn copy_into(&mut self, into: usize, s: &[u8]) {
-        let start = &raw mut *self.start;
-        unsafe { std::ptr::copy_nonoverlapping(s.as_ptr(), start.add(into), s.len()) }
+        let start = (&raw mut *self.start).cast::<u8>();
+        unsafe { std::ptr::copy_nonoverlapping(s.as_ptr(), start.add(into).cast(), s.len()) }
     }
 
     pub fn append_to_ending(&mut self, append: &str) {
@@ -94,10 +92,13 @@ impl<'a> InflectionBuf<'a> {
         self.len -= 2;
     }
 
-    pub fn finish(self) -> &'a mut str {
-        unsafe {
-            let slice = std::slice::from_raw_parts_mut(self.start, self.len);
-            str::from_utf8_unchecked_mut(slice)
-        }
+    pub fn finish(self) -> &'a mut [Utf8Letter] {
+        unsafe { std::slice::from_raw_parts_mut((&raw mut *self.start).cast(), self.len / 2) }
+    }
+}
+
+impl<'a> From<InflectionBuf<'a>> for InflectedNoun<'a> {
+    fn from(value: InflectionBuf<'a>) -> Self {
+        Self { len: value.len / 2, stem_len: value.stem_len / 2, buf: value.finish() }
     }
 }

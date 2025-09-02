@@ -6,6 +6,9 @@ use crate::{
 mod declension;
 mod fmt;
 mod from_str;
+mod inflected;
+
+pub use inflected::*;
 
 // FIXME(const-hack): Derive Clone and PartialEq with #[derive_const] when String supports it.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

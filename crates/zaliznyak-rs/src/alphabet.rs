@@ -140,11 +140,18 @@ impl Utf8Letter {
         unsafe { Letter::from_codepoint_unchecked(self.to_codepoint()) }
     }
 
-    pub const unsafe fn cast_slice(slice: &[u8]) -> &[Self] {
-        unsafe { std::slice::from_raw_parts(slice.as_ptr().cast(), slice.len() / 2) }
+    pub const fn cast(letters: &[Utf8Letter]) -> &str {
+        unsafe {
+            let slice = std::slice::from_raw_parts(letters.as_ptr().cast(), letters.len() * 2);
+            str::from_utf8_unchecked(slice)
+        }
     }
-    pub const unsafe fn cast_slice_mut(slice: &mut [u8]) -> &mut [Self] {
-        unsafe { std::slice::from_raw_parts_mut(slice.as_mut_ptr().cast(), slice.len() / 2) }
+    pub const fn cast_mut(letters: &mut [Utf8Letter]) -> &mut str {
+        unsafe {
+            let slice =
+                std::slice::from_raw_parts_mut(letters.as_mut_ptr().cast(), letters.len() * 2);
+            str::from_utf8_unchecked_mut(slice)
+        }
     }
 
     pub const fn is_vowel(self) -> bool {

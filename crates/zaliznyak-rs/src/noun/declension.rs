@@ -3,24 +3,28 @@ use crate::{
     categories::{Case, CaseEx, DeclInfo, Gender, IntoNumber, Number},
     declension::{Declension, NounDeclension, NounStemType},
     inflection_buf::InflectionBuf,
-    noun::Noun,
+    noun::{InflectedNoun, InflectedNounBuf, Noun},
     stress::NounStress,
-    util::StackBuf,
 };
 
 impl Noun {
-    pub fn inflect(&self, case: CaseEx, number: Number) -> String {
-        let required_char_len = InflectionBuf::max_char_len_for_noun(self.stem.len());
-        let mut buf = StackBuf::<Utf8Letter, 31>::new(required_char_len);
+    pub fn inflect(&self, case: CaseEx, number: Number) -> InflectedNounBuf {
+        let cap = InflectionBuf::max_char_len_for_noun(self.stem.len());
+        let mut buf = InflectedNounBuf::with_capacity(cap);
 
-        let len = self.inflect_into(case, number, buf.as_mut_slice()).len();
+        let res = self.inflect_into(case, number, buf.buf.as_mut_slice());
+        buf.stem_len = res.stem_len;
+        buf.len = res.len;
 
-        // TODO: don't allocate String, instead return some InflectedNoun struct with stem/ending
-        // fns, and implementing IntoIterator<&str>, to allow using it in String::extend.
-        buf.into_string(len)
+        buf
     }
 
-    pub fn inflect_into<'a>(&self, case: CaseEx, number: Number, dst: &'a mut [Utf8Letter]) -> &'a mut str {
+    pub fn inflect_into<'a>(
+        &self,
+        case: CaseEx,
+        number: Number,
+        dst: &'a mut [Utf8Letter],
+    ) -> InflectedNoun<'a> {
         let mut buf = InflectionBuf::from_stem_in(&self.stem, dst);
 
         if let Some(decl) = self.info.declension {
@@ -41,7 +45,7 @@ impl Noun {
             };
         }
 
-        buf.finish()
+        buf.into()
     }
 }
 
@@ -336,7 +340,7 @@ impl NounDeclension {
                 }
                 // 3)b) before 'к'/'г'/'х', but not after sibilant, insert 'о'
                 else if let Some(К | Г | Х) = last
-                    && let Some(ref pre_last) = pre_last
+                    && let Some(pre_last) = &pre_last
                     && !pre_last.is_sibilant()
                 {
                     О
@@ -414,8 +418,11 @@ mod tests {
             info: info.parse().unwrap(),
         };
 
-        Number::VALUES
-            .map(|number| Case::VALUES.map(|case| noun.inflect(case.into(), number)).join(", "))
+        Number::VALUES.map(|number| {
+            Case::VALUES
+                .map(|case| noun.inflect(case.into(), number).as_str().to_owned())
+                .join(", ")
+        })
     }
 
     #[test]

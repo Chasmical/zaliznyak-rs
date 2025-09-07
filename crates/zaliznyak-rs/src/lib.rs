@@ -12,12 +12,12 @@
 #![feature(const_result_trait_fn)]
 #![feature(const_eval_select)]
 #![feature(vec_into_raw_parts)]
+#![cfg_attr(test, feature(test))]
 #![allow(internal_features, confusable_idents)]
 
 pub mod alphabet;
 pub mod categories;
 pub mod declension;
-pub mod inflection_buf;
 pub mod noun;
 pub mod stress;
 

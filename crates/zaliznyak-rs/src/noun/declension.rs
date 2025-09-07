@@ -2,21 +2,14 @@ use crate::{
     alphabet::Utf8Letter,
     categories::{Case, CaseEx, DeclInfo, Gender, IntoNumber, Number},
     declension::{Declension, NounDeclension, NounStemType},
-    inflection_buf::InflectionBuf,
-    noun::{InflectedNoun, InflectedNounBuf, Noun},
+    noun::{InflectedNoun, InflectedNounBuf, Noun, NounInfo},
     stress::NounStress,
+    util::InflectionBuf,
 };
 
 impl Noun {
     pub fn inflect(&self, case: CaseEx, number: Number) -> InflectedNounBuf {
-        let cap = InflectionBuf::max_char_len_for_noun(self.stem.len());
-        let mut buf = InflectedNounBuf::with_capacity(cap);
-
-        let res = self.inflect_into(case, number, buf.buf.as_mut_slice());
-        buf.stem_len = res.stem_len;
-        buf.len = res.len;
-
-        buf
+        self.info.inflect(&self.stem, case, number)
     }
 
     pub fn inflect_into<'a>(
@@ -25,18 +18,36 @@ impl Noun {
         number: Number,
         dst: &'a mut [Utf8Letter],
     ) -> InflectedNoun<'a> {
-        let mut buf = InflectionBuf::from_stem_in(&self.stem, dst);
+        self.info.inflect_into(&self.stem, case, number, dst)
+    }
+}
 
-        if let Some(decl) = self.info.declension {
-            let number = self.info.tantum.unwrap_or(number);
+impl NounInfo {
+    pub fn inflect(&self, stem: &str, case: CaseEx, number: Number) -> InflectedNounBuf {
+        let mut buf = InflectedNounBuf::with_capacity_for(stem);
+
+        let res = self.inflect_into(stem, case, number, buf.buf.as_mut_slice());
+        buf.stem_len = res.stem_len;
+        buf.len = res.len;
+
+        buf
+    }
+
+    pub fn inflect_into<'a>(
+        &self,
+        stem: &str,
+        case: CaseEx,
+        number: Number,
+        dst: &'a mut [Utf8Letter],
+    ) -> InflectedNoun<'a> {
+        let mut buf = InflectionBuf::with_stem_in(stem, dst);
+
+        if let Some(decl) = self.declension {
+            let number = self.tantum.unwrap_or(number);
             let (case, number) = case.normalize_with(number);
 
-            let info = DeclInfo {
-                case,
-                number,
-                gender: self.info.declension_gender,
-                animacy: self.info.animacy,
-            };
+            let info =
+                DeclInfo { case, number, gender: self.declension_gender, animacy: self.animacy };
 
             match decl {
                 Declension::Noun(decl) => decl.inflect(info, &mut buf),
@@ -50,7 +61,7 @@ impl Noun {
 }
 
 impl NounDeclension {
-    pub fn inflect(self, info: DeclInfo, buf: &mut InflectionBuf) {
+    pub(crate) fn inflect(self, info: DeclInfo, buf: &mut InflectionBuf) {
         buf.append_to_ending(self.find_ending(info));
 
         if self.flags.has_circle() {
@@ -77,7 +88,7 @@ impl NounDeclension {
         }
     }
 
-    pub fn apply_unique_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
+    fn apply_unique_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
         use Utf8Letter::*;
 
         match buf.stem_mut() {
@@ -214,7 +225,7 @@ impl NounDeclension {
         };
     }
 
-    pub fn apply_vowel_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
+    fn apply_vowel_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
         use Utf8Letter::*;
 
         // Extend stem's lifetime, to allow accessing ending() and then setting stem chars
@@ -360,7 +371,7 @@ impl NounDeclension {
         }
     }
 
-    pub fn apply_ye_yo_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
+    fn apply_ye_yo_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
         let (stem, ending) = buf.stem_and_ending_mut();
 
         // If there's a 'ё' in the stem:
@@ -419,9 +430,7 @@ mod tests {
         };
 
         Number::VALUES.map(|number| {
-            Case::VALUES
-                .map(|case| noun.inflect(case.into(), number).as_str().to_owned())
-                .join(", ")
+            Case::VALUES.map(|case| noun.inflect(case.into(), number).into_string()).join(", ")
         })
     }
 

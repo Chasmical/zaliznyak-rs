@@ -1,10 +1,9 @@
 use crate::{alphabet::Utf8Letter, noun::InflectedNoun};
 
-#[derive(Debug)]
-pub struct InflectionBuf<'a> {
+pub(crate) struct InflectionBuf<'a> {
     start: &'a mut Utf8Letter,
-    len: usize,
     stem_len: usize,
+    len: usize,
 }
 
 impl<'a> InflectionBuf<'a> {
@@ -12,7 +11,7 @@ impl<'a> InflectionBuf<'a> {
         stem_len / 2 + 5
     }
 
-    pub fn from_stem_in(stem: &str, buf: &'a mut [Utf8Letter]) -> Self {
+    pub const fn with_stem_in(stem: &str, buf: &'a mut [Utf8Letter]) -> Self {
         let required_len = Self::max_char_len_for_noun(stem.len());
         assert!(buf.len() >= required_len);
         let buf = buf.as_mut_ptr();
@@ -21,25 +20,31 @@ impl<'a> InflectionBuf<'a> {
         Self { start: unsafe { &mut *buf }, len: stem.len(), stem_len: stem.len() }
     }
 
-    pub const fn stem_and_ending(&self) -> (&[Utf8Letter], &[Utf8Letter]) {
-        let slice = unsafe { std::slice::from_raw_parts(self.start, self.len / 2) };
-        unsafe { slice.split_at_unchecked(self.stem_len / 2) }
+    pub const fn as_slice(&self) -> &[Utf8Letter] {
+        unsafe { std::slice::from_raw_parts(self.start, self.len / 2) }
     }
-    pub const fn stem_and_ending_mut(&mut self) -> (&mut [Utf8Letter], &mut [Utf8Letter]) {
-        let slice = unsafe { std::slice::from_raw_parts_mut(self.start, self.len / 2) };
-        unsafe { slice.split_at_mut_unchecked(self.stem_len / 2) }
+    pub const fn as_mut_slice(&mut self) -> &mut [Utf8Letter] {
+        unsafe { std::slice::from_raw_parts_mut(self.start, self.len / 2) }
     }
 
-    pub fn stem(&self) -> &[Utf8Letter] {
+    pub const fn stem_and_ending(&self) -> (&[Utf8Letter], &[Utf8Letter]) {
+        unsafe { self.as_slice().split_at_unchecked(self.stem_len / 2) }
+    }
+    pub const fn stem_and_ending_mut(&mut self) -> (&mut [Utf8Letter], &mut [Utf8Letter]) {
+        let stem_len = self.stem_len;
+        unsafe { self.as_mut_slice().split_at_mut_unchecked(stem_len / 2) }
+    }
+
+    pub const fn stem(&self) -> &[Utf8Letter] {
         self.stem_and_ending().0
     }
-    pub fn stem_mut(&mut self) -> &mut [Utf8Letter] {
+    pub const fn stem_mut(&mut self) -> &mut [Utf8Letter] {
         self.stem_and_ending_mut().0
     }
-    pub fn ending(&self) -> &[Utf8Letter] {
+    pub const fn ending(&self) -> &[Utf8Letter] {
         self.stem_and_ending().1
     }
-    pub fn ending_mut(&mut self) -> &mut [Utf8Letter] {
+    pub const fn ending_mut(&mut self) -> &mut [Utf8Letter] {
         self.stem_and_ending_mut().1
     }
 
@@ -92,12 +97,12 @@ impl<'a> InflectionBuf<'a> {
         self.len -= 2;
     }
 
-    pub fn finish(self) -> &'a mut [Utf8Letter] {
+    pub const fn finish(self) -> &'a mut [Utf8Letter] {
         unsafe { std::slice::from_raw_parts_mut((&raw mut *self.start).cast(), self.len / 2) }
     }
 }
 
-impl<'a> From<InflectionBuf<'a>> for InflectedNoun<'a> {
+impl<'a> const From<InflectionBuf<'a>> for InflectedNoun<'a> {
     fn from(value: InflectionBuf<'a>) -> Self {
         Self { len: value.len / 2, stem_len: value.stem_len / 2, buf: value.finish() }
     }

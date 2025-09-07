@@ -1,7 +1,6 @@
 use crate::alphabet::Utf8Letter;
-use std::{mem::MaybeUninit, slice::SliceIndex};
 
-pub struct StackBuf<T, const N: usize> {
+pub(crate) struct StackBuf<T, const N: usize> {
     buf: Buf<T, N>,
 }
 
@@ -14,7 +13,7 @@ enum Buf<T, const N: usize> {
 impl<T, const N: usize> StackBuf<T, N> {
     pub fn with_capacity(cap: usize) -> Self {
         if cap <= N {
-            Self { buf: Buf::Stack(unsafe { MaybeUninit::uninit().assume_init() }) }
+            Self { buf: Buf::Stack(unsafe { std::mem::MaybeUninit::uninit().assume_init() }) }
         } else {
             let mut vec = Vec::with_capacity(cap);
             unsafe { vec.set_len(cap) };
@@ -49,11 +48,11 @@ impl<T, const N: usize> StackBuf<T, N> {
     }
 
     pub const unsafe fn get_unchecked<I>(&self, index: I) -> &I::Output
-    where I: [const] SliceIndex<[T]> {
+    where I: [const] std::slice::SliceIndex<[T]> {
         unsafe { self.as_slice().get_unchecked(index) }
     }
     pub const unsafe fn get_unchecked_mut<I>(&mut self, index: I) -> &mut I::Output
-    where I: [const] SliceIndex<[T]> {
+    where I: [const] std::slice::SliceIndex<[T]> {
         unsafe { self.as_mut_slice().get_unchecked_mut(index) }
     }
 
@@ -70,7 +69,7 @@ impl<T, const N: usize> StackBuf<T, N> {
 }
 
 impl<const N: usize> StackBuf<Utf8Letter, N> {
-    pub fn as_str(&self) -> &str {
+    pub const fn as_str(&self) -> &str {
         unsafe {
             let letters = self.as_slice();
             let slice = std::slice::from_raw_parts(letters.as_ptr().cast(), letters.len() * 2);
@@ -85,5 +84,11 @@ impl<const N: usize> StackBuf<Utf8Letter, N> {
             let vec = Vec::<u8>::from_raw_parts(ptr.cast(), len * 2, cap * 2);
             String::from_utf8_unchecked(vec)
         }
+    }
+}
+
+impl<T: std::fmt::Debug, const N: usize> std::fmt::Debug for StackBuf<T, N> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.as_slice().fmt(f)
     }
 }

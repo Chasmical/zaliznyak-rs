@@ -1,9 +1,9 @@
-use crate::{alphabet::Utf8Letter, noun::InflectedNoun};
+use crate::alphabet::Utf8Letter;
 
 pub(crate) struct InflectionBuf<'a> {
     start: &'a mut Utf8Letter,
-    stem_len: usize,
-    len: usize,
+    pub(crate) stem_len: usize,
+    pub(crate) len: usize,
 }
 
 impl<'a> InflectionBuf<'a> {
@@ -99,11 +99,5 @@ impl<'a> InflectionBuf<'a> {
 
     pub const fn finish(self) -> &'a mut [Utf8Letter] {
         unsafe { std::slice::from_raw_parts_mut((&raw mut *self.start).cast(), self.len / 2) }
-    }
-}
-
-impl<'a> const From<InflectionBuf<'a>> for InflectedNoun<'a> {
-    fn from(value: InflectionBuf<'a>) -> Self {
-        Self { len: value.len / 2, stem_len: value.stem_len / 2, buf: value.finish() }
     }
 }

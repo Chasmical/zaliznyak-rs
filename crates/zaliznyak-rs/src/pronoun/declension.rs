@@ -1,31 +1,26 @@
 use crate::{
+    Word, WordBuf,
     alphabet::Utf8Letter,
     categories::{DeclInfo, Gender, IntoNumber},
     declension::{Declension, PronounDeclension},
-    noun::{InflectedNoun, InflectedNounBuf},
     pronoun::{Pronoun, PronounInfo},
     util::InflectionBuf,
 };
 
 impl Pronoun {
-    pub fn inflect(&self, info: DeclInfo) -> InflectedNounBuf {
+    pub fn inflect(&self, info: DeclInfo) -> WordBuf {
         self.info.inflect(&self.stem, info)
     }
 
-    pub fn inflect_into<'a>(&self, info: DeclInfo, dst: &'a mut [Utf8Letter]) -> InflectedNoun<'a> {
+    pub fn inflect_into<'a>(&self, info: DeclInfo, dst: &'a mut [Utf8Letter]) -> Word<'a> {
         self.info.inflect_into(&self.stem, info, dst)
     }
 }
 
 impl PronounInfo {
-    pub fn inflect(&self, stem: &str, info: DeclInfo) -> InflectedNounBuf {
-        let mut buf = InflectedNounBuf::with_capacity_for(stem);
-
-        let res = self.inflect_into(stem, info, buf.buf.as_mut_slice());
-        buf.stem_len = res.stem_len;
-        buf.len = res.len;
-
-        buf
+    pub fn inflect(&self, stem: &str, info: DeclInfo) -> WordBuf {
+        let buf = WordBuf::with_capacity_for(stem);
+        buf.with_buf(|dst| self.inflect_into(stem, info, dst))
     }
 
     pub fn inflect_into<'a>(
@@ -33,7 +28,7 @@ impl PronounInfo {
         stem: &str,
         info: DeclInfo,
         dst: &'a mut [Utf8Letter],
-    ) -> InflectedNoun<'a> {
+    ) -> Word<'a> {
         let mut buf = InflectionBuf::with_stem_in(stem, dst);
 
         if let Some(decl) = self.declension {

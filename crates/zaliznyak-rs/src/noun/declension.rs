@@ -1,14 +1,15 @@
 use crate::{
+    Word, WordBuf,
     alphabet::Utf8Letter,
     categories::{Case, CaseEx, DeclInfo, Gender, IntoNumber, Number},
     declension::{Declension, NounDeclension, NounStemType},
-    noun::{InflectedNoun, InflectedNounBuf, Noun, NounInfo},
+    noun::{Noun, NounInfo},
     stress::NounStress,
     util::InflectionBuf,
 };
 
 impl Noun {
-    pub fn inflect(&self, case: CaseEx, number: Number) -> InflectedNounBuf {
+    pub fn inflect(&self, case: CaseEx, number: Number) -> WordBuf {
         self.info.inflect(&self.stem, case, number)
     }
 
@@ -17,20 +18,15 @@ impl Noun {
         case: CaseEx,
         number: Number,
         dst: &'a mut [Utf8Letter],
-    ) -> InflectedNoun<'a> {
+    ) -> Word<'a> {
         self.info.inflect_into(&self.stem, case, number, dst)
     }
 }
 
 impl NounInfo {
-    pub fn inflect(&self, stem: &str, case: CaseEx, number: Number) -> InflectedNounBuf {
-        let mut buf = InflectedNounBuf::with_capacity_for(stem);
-
-        let res = self.inflect_into(stem, case, number, buf.buf.as_mut_slice());
-        buf.stem_len = res.stem_len;
-        buf.len = res.len;
-
-        buf
+    pub fn inflect(&self, stem: &str, case: CaseEx, number: Number) -> WordBuf {
+        let buf = WordBuf::with_capacity_for(stem);
+        buf.with_buf(|dst| self.inflect_into(stem, case, number, dst))
     }
 
     pub fn inflect_into<'a>(
@@ -39,7 +35,7 @@ impl NounInfo {
         case: CaseEx,
         number: Number,
         dst: &'a mut [Utf8Letter],
-    ) -> InflectedNoun<'a> {
+    ) -> Word<'a> {
         let mut buf = InflectionBuf::with_stem_in(stem, dst);
 
         if let Some(decl) = self.declension {

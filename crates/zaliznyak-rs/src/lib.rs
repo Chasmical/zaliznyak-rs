@@ -24,3 +24,6 @@ pub mod pronoun;
 pub mod stress;
 
 mod util;
+mod word_buf;
+
+pub use word_buf::*;

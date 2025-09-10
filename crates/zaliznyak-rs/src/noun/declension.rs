@@ -279,6 +279,7 @@ impl NounDeclension {
                     ) {
                         *vowel = Ь;
                     } else {
+                        // 3) removed in all other cases
                         buf.remove_stem_char_at(vowel_index);
                     };
                 },

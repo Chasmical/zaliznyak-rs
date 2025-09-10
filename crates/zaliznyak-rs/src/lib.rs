@@ -19,6 +19,7 @@ pub mod alphabet;
 pub mod categories;
 pub mod declension;
 pub mod noun;
+pub mod pronoun;
 pub mod stress;
 
 mod util;

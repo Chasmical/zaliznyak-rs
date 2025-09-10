@@ -15,6 +15,7 @@
 #![cfg_attr(test, feature(test))]
 #![allow(internal_features, confusable_idents)]
 
+pub mod adjective;
 pub mod alphabet;
 pub mod categories;
 pub mod declension;

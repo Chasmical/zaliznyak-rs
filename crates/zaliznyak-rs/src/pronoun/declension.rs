@@ -1,6 +1,6 @@
 use crate::{
     alphabet::Utf8Letter,
-    categories::{DeclInfo, Gender},
+    categories::{DeclInfo, Gender, IntoNumber},
     declension::{Declension, PronounDeclension},
     noun::{InflectedNoun, InflectedNounBuf},
     pronoun::{Pronoun, PronounInfo},
@@ -39,7 +39,7 @@ impl PronounInfo {
         if let Some(decl) = self.declension {
             match decl {
                 Declension::Pronoun(decl) => decl.inflect(info, &mut buf),
-                Declension::Adjective(_) => todo!("Adjective declension for pronouns"), // TODO
+                Declension::Adjective(decl) => decl.inflect(info, &mut buf),
                 Declension::Noun(_) => unimplemented!(), // Pronouns don't decline by noun declension
             };
         }
@@ -58,10 +58,12 @@ impl PronounDeclension {
     }
 
     fn apply_vowel_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
-        // Vowel alternation type A only
-
-        // Masculine nominative form is unchanged
-        if info.gender == Gender::Masculine && info.case.is_nom_or_acc_inan(info) {
+        // Vowel alternation type A
+        // Singular masculine nominative form is unchanged
+        if info.is_singular()
+            && info.gender == Gender::Masculine
+            && info.case.is_nom_or_acc_inan(info)
+        {
             return;
         }
 

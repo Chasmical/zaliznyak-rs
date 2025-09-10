@@ -51,7 +51,7 @@ impl NounInfo {
 
             match decl {
                 Declension::Noun(decl) => decl.inflect(info, &mut buf),
-                Declension::Adjective(_) => todo!("Adjective declension for nouns"), // TODO
+                Declension::Adjective(decl) => decl.inflect(info, &mut buf),
                 Declension::Pronoun(_) => unimplemented!(), // Nouns don't decline by pronoun declension
             };
         }
@@ -357,7 +357,7 @@ impl NounDeclension {
                 {
                     О
                 }
-                // 3)c) if unstressed insert 'е', and if stressed - 'е'
+                // 3)c) if unstressed insert 'е', and if stressed - 'ё'
                 else {
                     // But after 'ц' always insert 'е'
                     if last == Some(Ц) || self.stress.is_stem_stressed(info) {

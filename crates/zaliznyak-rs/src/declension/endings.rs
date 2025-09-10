@@ -105,7 +105,7 @@ impl AdjectiveDeclension {
         get_ending_by_index(if stressed { str } else { un_str })
     }
 
-    pub const fn find_ending_short_form(self, info: DeclInfo) -> &'static str {
+    pub const fn find_ending_short(self, info: DeclInfo) -> &'static str {
         // Find un-stressed and stressed ending indices
         let (un_str, str) = self.lookup_ending_indices(info, 6);
 
@@ -181,13 +181,13 @@ mod tests {
         let decl: AdjectiveDeclension = "1a".parse().unwrap(); // e.g. шёлковый
         assert_eq!(decl.find_ending("В. ед. м. неод.".parse().unwrap()), "ый");
         assert_eq!(decl.find_ending("В. ед. м. одуш.".parse().unwrap()), "ого");
-        assert_eq!(decl.find_ending_short_form("ед. с.".parse().unwrap()), "о");
-        assert_eq!(decl.find_ending_short_form("мн.".parse().unwrap()), "ы");
+        assert_eq!(decl.find_ending_short("ед. с.".parse().unwrap()), "о");
+        assert_eq!(decl.find_ending_short("мн.".parse().unwrap()), "ы");
 
         let decl: AdjectiveDeclension = "4a/b'".parse().unwrap(); // e.g. свежий
         assert_eq!(decl.find_ending("В. ед. м. неод.".parse().unwrap()), "ий");
         assert_eq!(decl.find_ending("В. ед. м. одуш.".parse().unwrap()), "его");
-        assert_eq!(decl.find_ending_short_form("ед. с.".parse().unwrap()), "о");
-        assert_eq!(decl.find_ending_short_form("мн.".parse().unwrap()), "и");
+        assert_eq!(decl.find_ending_short("ед. с.".parse().unwrap()), "о");
+        assert_eq!(decl.find_ending_short("мн.".parse().unwrap()), "и");
     }
 }

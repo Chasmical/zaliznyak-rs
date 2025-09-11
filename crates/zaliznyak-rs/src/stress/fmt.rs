@@ -36,21 +36,19 @@ impl AnyStress {
         }
     }
 }
+
 impl AnyDualStress {
     pub const fn fmt_to(self, dst: &mut [u8; 9]) -> &mut str {
         let mut dst = UnsafeBuf::new(dst);
 
-        // Format main into a 4-byte sub-buffer
-        let main_len = self.main.fmt_to(dst.chunk()).len();
-        dst.forward(main_len);
+        // Format main into buffer
+        dst.push_fmt2(self.main, AnyStress::fmt_to);
 
         if let Some(alt) = self.alt {
             // Append '/' as separator
             dst.push('/');
-
-            // Format alt into a 4-byte sub-buffer
-            let alt_len = alt.fmt_to(dst.chunk()).len();
-            dst.forward(alt_len);
+            // Format alt into buffer
+            dst.push_fmt2(alt, AnyStress::fmt_to);
         }
 
         dst.finish()

@@ -1,6 +1,8 @@
 use crate::{
     adjective::{AdjectiveFlags, AdjectiveInfo, AdjectiveKind},
-    declension::{DECLENSION_MAX_LEN, Declension, DeclensionKind},
+    declension::{
+        AdjectiveDeclension, DECLENSION_MAX_LEN, Declension, DeclensionKind, PronounDeclension,
+    },
     util::UnsafeBuf,
 };
 
@@ -41,12 +43,10 @@ impl AdjectiveInfo {
 
             match decl {
                 Declension::Adjective(decl) => {
-                    let len = decl.fmt_to(dst.chunk()).len();
-                    dst.forward(len);
+                    dst.push_fmt2(decl, AdjectiveDeclension::fmt_to);
                 },
                 Declension::Pronoun(decl) => {
-                    let len = decl.fmt_to(dst.chunk()).len();
-                    dst.forward(len);
+                    dst.push_fmt2(decl, PronounDeclension::fmt_to);
                 },
                 Declension::Noun(_) => {
                     unimplemented!() // Adjectives don't decline by noun declension
@@ -58,8 +58,7 @@ impl AdjectiveInfo {
             }
 
             if self.kind == AdjectiveKind::Regular {
-                let len = self.flags.fmt_to(dst.chunk()).len();
-                dst.forward(len);
+                dst.push_fmt2(self.flags, AdjectiveFlags::fmt_to);
             }
         }
 

@@ -1,6 +1,6 @@
 use crate::{
     categories::{Animacy, Gender, GenderEx, Number},
-    declension::{DECLENSION_MAX_LEN, Declension},
+    declension::{AdjectiveDeclension, DECLENSION_MAX_LEN, Declension, NounDeclension},
     noun::NounInfo,
     util::UnsafeBuf,
 };
@@ -69,8 +69,7 @@ impl NounInfo {
                         dst.push(' ');
                     }
                     // Format the noun declension
-                    let decl_len = decl.fmt_to(dst.chunk()).len();
-                    dst.forward(decl_len);
+                    dst.push_fmt2(decl, NounDeclension::fmt_to);
                 },
                 Declension::Pronoun(_) => {
                     unimplemented!(); // Nouns don't decline by pronoun declension
@@ -79,8 +78,7 @@ impl NounInfo {
                     // Append 'п ' prefix
                     dst.push_str("п ");
                     // Format the adjective declension
-                    let decl_len = decl.fmt_to(dst.chunk()).len();
-                    dst.forward(decl_len);
+                    dst.push_fmt2(decl, AdjectiveDeclension::fmt_to);
                 },
             };
         } else {

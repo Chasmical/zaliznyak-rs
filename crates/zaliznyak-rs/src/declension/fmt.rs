@@ -11,16 +11,21 @@ pub const DECLENSION_FLAGS_MAX_LEN: usize = 16;
 
 impl DeclensionFlags {
     #[inline]
-    pub(crate) const fn fmt_leading_to_buf(self, dst: &mut UnsafeBuf) {
+    pub(crate) const fn fmt_leading_to(self, dst: &mut [u8; 3]) -> &mut str {
+        let mut dst = UnsafeBuf::new(dst);
+
         if self.has_circle() {
             dst.push('°');
         }
         if self.has_star() {
             dst.push('*');
         }
+        dst.finish()
     }
     #[inline]
-    pub(crate) const fn fmt_trailing_to_buf(self, dst: &mut UnsafeBuf) {
+    pub(crate) const fn fmt_trailing_to(self, dst: &mut [u8; 13]) -> &mut str {
+        let mut dst = UnsafeBuf::new(dst);
+
         if self.has_any_trailing_flags() {
             if self.has_circled_one() {
                 dst.push('①');
@@ -35,11 +40,12 @@ impl DeclensionFlags {
                 dst.push_str(", ё");
             }
         }
+        dst.finish()
     }
     pub const fn fmt_to(self, dst: &mut [u8; DECLENSION_FLAGS_MAX_LEN]) -> &mut str {
         let mut dst = UnsafeBuf::new(dst);
-        self.fmt_leading_to_buf(&mut dst);
-        self.fmt_trailing_to_buf(&mut dst);
+        dst.push_fmt2(self, Self::fmt_leading_to);
+        dst.push_fmt2(self, Self::fmt_trailing_to);
         dst.finish()
     }
 }
@@ -56,13 +62,9 @@ const fn fmt_declension_any(
     let mut dst = UnsafeBuf::new(dst);
 
     dst.push(stem_type.to_ascii_digit() as char);
-
-    flags.fmt_leading_to_buf(&mut dst);
-
-    let stress_len = stress.fmt_to(dst.chunk()).len();
-    dst.forward(stress_len);
-
-    flags.fmt_trailing_to_buf(&mut dst);
+    dst.push_fmt2(flags, DeclensionFlags::fmt_leading_to);
+    dst.push_fmt2(stress, AnyDualStress::fmt_to);
+    dst.push_fmt2(flags, DeclensionFlags::fmt_trailing_to);
 
     dst.finish()
 }

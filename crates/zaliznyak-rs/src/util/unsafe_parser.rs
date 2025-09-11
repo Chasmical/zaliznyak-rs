@@ -21,7 +21,11 @@ impl<'a> UnsafeParser<'a> {
     }
 
     pub const fn forward(&mut self, dist: usize) {
+        // Check that the move distance is valid
         debug_assert!(dist <= self.remaining_len());
+        // Check that the next byte is not a UTF-8 continuation byte
+        debug_assert!(!matches!(self.peek_one().unwrap_or(&0), 0x80..=0xBF));
+
         self.current = unsafe { &*(&raw const *self.current).add(dist) };
     }
     pub const fn finished(&self) -> bool {

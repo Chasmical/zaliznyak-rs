@@ -3,6 +3,7 @@ use thiserror::Error;
 
 mod declension;
 mod flags;
+mod fmt;
 
 pub use flags::*;
 
@@ -26,8 +27,8 @@ pub struct AdjectiveInfo {
 #[derive_const(Clone, PartialEq)]
 pub enum AdjectiveKind {
     Regular,
-    Numeral,
     Pronoun,
+    Numeral,
 }
 
 #[derive(Debug, Error, Copy, Eq, Hash)]

@@ -1,7 +1,7 @@
 use crate::{
     categories::{Animacy, Gender, GenderEx, Number},
     declension::{DECLENSION_MAX_LEN, Declension},
-    noun::{Noun, NounInfo},
+    noun::NounInfo,
     util::UnsafeBuf,
 };
 
@@ -102,11 +102,6 @@ impl NounInfo {
 impl std::fmt::Display for NounInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         self.fmt_to(&mut [0; _]).fmt(f)
-    }
-}
-impl std::fmt::Display for Noun {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{} {}", self.stem, self.info)
     }
 }
 

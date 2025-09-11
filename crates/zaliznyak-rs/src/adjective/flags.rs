@@ -1,16 +1,14 @@
+use crate::categories::{DeclInfo, Gender, IntoNumber};
 use bitflags::bitflags;
 
-use crate::categories::{DeclInfo, Gender, IntoNumber};
-
 bitflags! {
-    // FIXME(const-hack): Derive PartialEq with #[derive_const] when bitflags supports it.
-    #[derive(Debug, Copy, PartialEq, Eq, Hash)]
+    #[derive(Debug, Copy, Eq)]
     #[derive_const(Clone)]
     pub struct AdjectiveFlags: u8 {
-        const MINUS               = 0b_0001;
-        const CROSS               = 0b_0010;
-        const BOXED_CROSS         = 0b_0011;
-        const NO_COMPARATIVE_FORM = 0b_1000;
+        const MINUS               = 0b_001;
+        const CROSS               = 0b_010;
+        const BOXED_CROSS         = 0b_011;
+        const NO_COMPARATIVE_FORM = 0b_100;
     }
 }
 
@@ -41,5 +39,22 @@ impl AdjectiveFlags {
             // — - ok, ✕ and ⌧ - difficult
             if flags.bits() >= Self::CROSS.bits() { None } else { Some(true) }
         }
+    }
+}
+
+// FIXME(const-hack): Replace these with #[derive_const], once bitflags crate supports it.
+impl const Default for AdjectiveFlags {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+impl const PartialEq for AdjectiveFlags {
+    fn eq(&self, other: &Self) -> bool {
+        self.bits() == other.bits()
+    }
+}
+impl std::hash::Hash for AdjectiveFlags {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write_u8(self.bits());
     }
 }

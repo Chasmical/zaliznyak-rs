@@ -42,24 +42,31 @@ impl WordBuf {
         self.buf.into_string(self.len)
     }
 
+    fn copy_info_from<'a>(&mut self, word: Word<'a>) {
+        self.stem_len = word.stem_len;
+        self.len = word.len;
+    }
+
     pub(crate) fn with_buf<'a>(
         mut self,
         inflect: impl FnOnce(&'a mut [Utf8Letter]) -> Word<'a>,
     ) -> Self {
-        let dst = unsafe { std::mem::transmute(self.buf.as_mut_slice()) };
+        let dst = unsafe {
+            std::mem::transmute::<&mut [Utf8Letter], &mut [Utf8Letter]>(self.buf.as_mut_slice())
+        };
         let word = inflect(dst);
-        self.stem_len = word.stem_len;
-        self.len = word.len;
+        self.copy_info_from(word);
         self
     }
     pub(crate) fn with_buf_opt<'a>(
         mut self,
         inflect: impl FnOnce(&'a mut [Utf8Letter]) -> Option<Word<'a>>,
     ) -> Option<Self> {
-        let dst = unsafe { std::mem::transmute(self.buf.as_mut_slice()) };
+        let dst = unsafe {
+            std::mem::transmute::<&mut [Utf8Letter], &mut [Utf8Letter]>(self.buf.as_mut_slice())
+        };
         if let Some(word) = inflect(dst) {
-            self.stem_len = word.stem_len;
-            self.len = word.len;
+            self.copy_info_from(word);
             Some(self)
         } else {
             None
@@ -81,7 +88,7 @@ impl<'a> Word<'a> {
     pub fn to_owned(&self) -> WordBuf {
         WordBuf { buf: StackBuf::from(self.buf), stem_len: self.stem_len, len: self.len }
     }
-    pub fn to_string(&self) -> String {
+    pub fn to_str(&self) -> String {
         Utf8Letter::cast(self.buf).to_owned()
     }
 }

@@ -118,10 +118,10 @@ impl const PartialFromStr for NounInfo {
                         parser.forward(2);
                         kind = DeclensionKind::Noun;
 
-                        declension_gender = match gender_char {
-                            &utf8::М => Gender::Masculine,
-                            &utf8::С => Gender::Neuter,
-                            &utf8::Ж => Gender::Feminine,
+                        declension_gender = match *gender_char {
+                            utf8::М => Gender::Masculine,
+                            utf8::С => Gender::Neuter,
+                            utf8::Ж => Gender::Feminine,
                             _ => return Err(Self::Err::InvalidGenderOrType),
                         };
                         let declension_animacy =

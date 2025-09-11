@@ -10,15 +10,15 @@ impl<'a> UnsafeBuf<'a> {
     }
 
     pub const fn forward(&mut self, dist: usize) {
-        self.end = unsafe { &mut *(self.end as *mut u8).add(dist) };
+        self.end = unsafe { &mut *(&raw mut *self.end).add(dist) };
     }
     pub const fn chunk<const N: usize>(&mut self) -> &'a mut [u8; N] {
-        unsafe { &mut *(self.end as *mut u8 as *mut [u8; N]) }
+        unsafe { &mut *(&raw mut *self.end).cast::<[u8; N]>() }
     }
     pub const fn finish(self) -> &'a mut str {
         unsafe {
-            let start = self.start as *const u8 as *mut u8;
-            let len = (self.end as *mut u8).offset_from_unsigned(start);
+            let start = (&raw const *self.start).cast_mut();
+            let len = (&raw mut *self.end).offset_from_unsigned(start);
             str::from_utf8_unchecked_mut(std::slice::from_raw_parts_mut(start, len))
         }
     }

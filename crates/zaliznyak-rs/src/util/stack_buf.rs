@@ -11,6 +11,7 @@ enum Buf<T, const N: usize> {
 }
 
 impl<T, const N: usize> StackBuf<T, N> {
+    #[allow(clippy::uninit_vec, clippy::uninit_assumed_init)]
     pub fn with_capacity(cap: usize) -> Self {
         if cap <= N {
             Self { buf: Buf::Stack(unsafe { std::mem::MaybeUninit::uninit().assume_init() }) }

@@ -68,7 +68,7 @@ impl AdjectiveInfo {
 }
 
 impl AdjectiveFlags {
-    pub const fn fmt_to<'a>(self, dst: &'a mut [u8; 4]) -> &'a mut str {
+    pub const fn fmt_to(self, dst: &mut [u8; 4]) -> &mut str {
         let mut dst = UnsafeBuf::new(dst);
 
         let short_form_flags = self.intersection(Self::BOXED_CROSS);

@@ -10,7 +10,7 @@ impl<'a> UnsafeParser<'a> {
     }
 
     pub const fn remaining_len(&self) -> usize {
-        unsafe { (self.end as *const u8).offset_from_unsigned(self.current) }
+        unsafe { (&raw const *self.end).offset_from_unsigned(self.current) }
     }
     pub const fn remaining(&self) -> &'a [u8] {
         // FIXME: Replace with from_ptr_range(self.current..self.end) when it's stable.
@@ -21,7 +21,8 @@ impl<'a> UnsafeParser<'a> {
     }
 
     pub const fn forward(&mut self, dist: usize) {
-        self.current = unsafe { &*(self.current as *const u8).add(dist) };
+        debug_assert!(dist <= self.remaining_len());
+        self.current = unsafe { &*(&raw const *self.current).add(dist) };
     }
     pub const fn finished(&self) -> bool {
         self.remaining_len() == 0

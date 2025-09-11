@@ -181,7 +181,7 @@ impl AdjectiveStemType {
         // Read the stem's last char (must be in [а-яё] range)
         let stem_char = Letter::from_char(iter.next()?)?;
 
-        // ending is always 4 bytes (2 chars) long, so slicing is safe
+        // Ending is always 4 bytes (2 chars) long, so slicing is safe
         let stem = unsafe { word.get_unchecked(..(word.len() - 4)) };
 
         // Identify the stem type from letters

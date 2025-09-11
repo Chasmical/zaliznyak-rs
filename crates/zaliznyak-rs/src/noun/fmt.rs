@@ -19,10 +19,10 @@ impl NounInfo {
         // If it's a plurale tantum, append 'мн.'
         if self.tantum == Some(Number::Plural) {
             dst.push_str("мн.");
-            need_brackets = self.declension != None;
+            need_brackets = self.declension.is_some();
 
             // If gender and animacy won't be specified in brackets (0 or adjective declension),
-            // include animacy right after 'мн.': 'мн. неод.', 'мн. одуш.'.
+            //   then include the animacy right after 'мн.': 'мн. неод.', 'мн. одуш.'.
             if matches!(self.declension, None | Some(Declension::Adjective(_))) {
                 dst.push_str(match self.animacy {
                     Animacy::Inanimate => " неод.",

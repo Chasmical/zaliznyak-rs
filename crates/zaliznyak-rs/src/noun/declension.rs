@@ -65,7 +65,7 @@ impl NounDeclension {
         }
 
         // Special case for stem type 8: endings from the table may start with 'я', while
-        // the stem ends with a hissing consonant. Replace 'я' with 'а' in this case.
+        //   the stem ends with a hissing consonant. Replace 'я' with 'а' in this case.
         // E.g. мышь (жо 8e) - Д.мн. мышАм, not мышЯм.
         if self.stem_type == NounStemType::Type8
             && buf.stem().last().is_some_and(|x| x.is_hissing())
@@ -205,6 +205,8 @@ impl NounDeclension {
                     // Add '[её]н' suffix to the stem
                     buf.append_to_stem(if yo { "ён" } else { "ен" });
                 } else {
+                    // In singular forms just replace the ending
+
                     if info.case.is_nom_or_acc_inan(info) {
                         // Replace nominative singular ending 'ь'/'о' with 'я'
                         buf.replace_ending("я");
@@ -224,8 +226,9 @@ impl NounDeclension {
     fn apply_vowel_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
         use Utf8Letter::*;
 
+        let stem = buf.stem_mut();
         // Extend stem's lifetime, to allow accessing ending() and then setting stem chars
-        let stem = unsafe { std::mem::transmute::<_, &mut [Utf8Letter]>(buf.stem_mut()) };
+        let stem = unsafe { std::mem::transmute::<&mut [Utf8Letter], &mut [Utf8Letter]>(stem) };
 
         if info.gender == Gender::Masculine
             || info.gender == Gender::Feminine && self.stem_type == NounStemType::Type8
@@ -300,7 +303,7 @@ impl NounDeclension {
                 return;
             }
             // If (2) flag changed the ending's gender, don't alternate the vowel,
-            // since it won't be consistent with the ending of different gender.
+            //   since it won't be consistent with the ending of different gender.
             if self.flags.has_circled_two() {
                 return;
             }
@@ -388,13 +391,12 @@ impl NounDeclension {
             let ye = unsafe { std::mem::transmute::<&mut Utf8Letter, &mut Utf8Letter>(ye) };
 
             let stress_into_yo = {
-                if !ending.iter().any(|x| x.is_vowel()) {
-                    // If the ending can't receive stress, then stress 'е' in the stem into 'ё'
-                    true
-                } else {
+                if ending.iter().any(|x| x.is_vowel()) {
+                    // If ending has a vowel, see if it receives stress or not
+
                     if matches!(self.stress, NounStress::F | NounStress::Fp | NounStress::Fpp) {
                         // Special case for f/f′/f″ stress nouns: the last 'е' in the stem
-                        // can receive stress only if it's the only vowel in the stem.
+                        //   can receive stress only if it's the only vowel in the stem.
                         // E.g. железа (1f, ё) - И.мн. железы; середа (1f′, ё) - В.ед. середу;
                         //       слеза (1f, ё) - И.мн. слёзы;    щека (3f′, ё) - В.ед. щёку.
                         let first_vowel = buf.stem().iter().find(|x| x.is_vowel());
@@ -405,6 +407,9 @@ impl NounDeclension {
                         // In all other cases, stress 'е' in the stem into 'ё'
                         self.stress.is_stem_stressed(info)
                     }
+                } else {
+                    // No vowels in ending, stress 'е' in the stem into 'ё'
+                    true
                 }
             };
 
@@ -429,6 +434,21 @@ mod tests {
         Number::VALUES.map(|number| {
             Case::VALUES.map(|case| noun.inflect(case.into(), number).into_string()).join(", ")
         })
+    }
+
+    extern crate test;
+    #[bench]
+    fn bench(b: &mut test::Bencher) {
+        let noun = Noun { stem: "метл".into(), info: "ж 1*d, ё".parse().unwrap() };
+        b.iter(|| {
+            let mut s = String::new();
+            for number in Number::VALUES {
+                for case in Case::VALUES {
+                    s.push_str(noun.inflect(case.into(), number).as_str());
+                }
+            }
+            s
+        });
     }
 
     #[test]

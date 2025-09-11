@@ -26,7 +26,7 @@ impl NounDeclension {
                 // Singular, stem type 7, overridden by (3)
                 if self.flags.has_circled_three() {
                     // Note(hack): Stem type can be set to 6, to achieve 'е' endings
-                    // in Prepositional Feminine/Neuter and Dative Feminine forms.
+                    //   in Prepositional Feminine/Neuter and Dative Feminine forms.
                     self.stem_type = NounStemType::Type6;
                 }
             }
@@ -80,8 +80,8 @@ impl PronounDeclension {
         // 0 means that the ending depends on animacy (accusative case)
         if indices.0 == 0 {
             // Stem type 2 pronouns' accusative case is not consistent. Normally, the endings
-            // of either Nominative or Genitive of the same stem type are used, but those of
-            // type 2 are "short forms", while Accusative still uses the full forms (type 4).
+            //   of either Nominative or Genitive of the same stem type are used, but those of
+            //   type 2 are "short forms", while Accusative still uses the full forms (type 4).
             // Example: господень <мс 2>: GEN господня, but ACC господнего.
             if self.stem_type == PronounStemType::Type2 {
                 index += (PronounStemType::Type4 as u8 - PronounStemType::Type2 as u8) as usize;
@@ -110,7 +110,7 @@ impl AdjectiveDeclension {
         let (un_str, str) = self.lookup_ending_indices(info, 6);
 
         // Note: in ambiguous scenarios (None value) endings are assumed to be stressed,
-        // since it doesn't look like there are any adjectives that vary like this anyway.
+        //   since it doesn't look like there are any adjectives that vary like this anyway.
         let stressed = un_str == str
             || self.stress.short.is_ending_stressed(info.number, info.gender).unwrap_or(true);
 

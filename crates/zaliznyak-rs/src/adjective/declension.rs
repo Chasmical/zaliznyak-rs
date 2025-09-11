@@ -234,9 +234,9 @@ impl AdjectiveDeclension {
         // 2) if 'ь'/'й' precedes the last consonant, replace 'ь'/'й' with 'ё' or 'е'.
         // E.g. горький (п 3*a/c') - горек; спокойный (п 1*a) - спокоен.
         if let Some(pre_last @ (Ь | Й)) = pre_last {
-            // Note: since vowel alternation only affects masculine, and short form stress doesn't
-            // vary in masculine forms
-            // (see AdjectiveShortStress::is_ending_stressed)
+            // Note: since vowel alternation only affects masculine, and short form stress
+            //   doesn't vary in masculine forms, it's okay to unwrap with any default value.
+            //   (see AdjectiveShortStress::is_ending_stressed)
             let stressed = last != Some(Ц)
                 && self.stress.short.is_ending_stressed(info.number, info.gender).unwrap_or(true);
             *pre_last = if stressed { Ё } else { Е };

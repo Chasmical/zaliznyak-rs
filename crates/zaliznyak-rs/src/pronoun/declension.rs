@@ -19,8 +19,9 @@ impl Pronoun {
 
 impl PronounInfo {
     pub fn inflect(&self, stem: &str, info: DeclInfo) -> WordBuf {
-        let buf = WordBuf::with_capacity_for(stem);
-        buf.with_buf(|dst| self.inflect_into(stem, info, dst))
+        let mut buf = WordBuf::with_capacity_for(stem);
+        buf.inflect(|dst| self.inflect_into(stem, info, dst));
+        buf
     }
 
     pub fn inflect_into<'a>(

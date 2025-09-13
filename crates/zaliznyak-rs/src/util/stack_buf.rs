@@ -1,27 +1,37 @@
-use crate::alphabet::Utf8Letter;
+use crate::alphabet::{Utf8Letter, Utf8LetterExt};
+use std::{
+    mem::MaybeUninit,
+    ops::{Deref, DerefMut},
+};
 
-pub(crate) struct StackBuf<T, const N: usize> {
-    buf: Buf<T, N>,
-}
+//   Layout for [T; N] <= 2 usizes
+// |--|--|--|--|--|--|--|--|--|--|--|--|
+// |00 00 00 00| <-- Stack Buffer  --> |
+// | Unique<T> |  Length   | Capacity  |
+//
+//   Layout for [T; N] > 2 usizes
+// |--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
+// |00| <------------- Stack Buffer -------------> |
+// |01|--------| Unique<T> |  Length   | Capacity  |
 
-#[repr(u8)]
-enum Buf<T, const N: usize> {
-    Stack([T; N]),
+pub(crate) enum StackBuf<T, const N: usize> {
+    Stack([MaybeUninit<T>; N]),
     Heap(Vec<T>),
 }
 
 impl<T, const N: usize> StackBuf<T, N> {
-    #[allow(clippy::uninit_vec, clippy::uninit_assumed_init)]
-    pub fn with_capacity(cap: usize) -> Self {
+    pub fn with_capacity(cap: usize) -> Self
+    where T: Copy {
+        #[allow(clippy::uninit_vec)]
         if cap <= N {
-            Self { buf: Buf::Stack(unsafe { std::mem::MaybeUninit::uninit().assume_init() }) }
+            Self::Stack([MaybeUninit::uninit(); N])
         } else {
             let mut vec = Vec::with_capacity(cap);
             unsafe { vec.set_len(cap) };
-            Self { buf: Buf::Heap(vec) }
+            Self::Heap(vec)
         }
     }
-    pub fn from(value: &[T]) -> Self
+    pub fn copied_from(value: &[T]) -> Self
     where T: Copy {
         let mut buf = Self::with_capacity(value.len());
         buf.as_mut_slice()[..value.len()].copy_from_slice(value);
@@ -29,39 +39,31 @@ impl<T, const N: usize> StackBuf<T, N> {
     }
 
     pub const fn capacity(&self) -> usize {
-        match &self.buf {
-            Buf::Stack(_) => N,
-            Buf::Heap(heap) => heap.capacity(),
+        match self {
+            Self::Stack(_) => N,
+            Self::Heap(heap) => heap.capacity(),
         }
     }
-
     pub const fn as_slice(&self) -> &[T] {
-        match &self.buf {
-            Buf::Stack(stack) => stack,
-            Buf::Heap(heap) => heap.as_slice(),
+        match self {
+            Self::Stack(stack) => unsafe { stack.assume_init_ref() },
+            Self::Heap(heap) => heap.as_slice(),
         }
     }
     pub const fn as_mut_slice(&mut self) -> &mut [T] {
-        match &mut self.buf {
-            Buf::Stack(stack) => stack,
-            Buf::Heap(heap) => heap.as_mut_slice(),
+        match self {
+            Self::Stack(stack) => unsafe { stack.assume_init_mut() },
+            Self::Heap(heap) => heap.as_mut_slice(),
         }
-    }
-
-    pub const unsafe fn get_unchecked<I>(&self, index: I) -> &I::Output
-    where I: [const] std::slice::SliceIndex<[T]> {
-        unsafe { self.as_slice().get_unchecked(index) }
-    }
-    pub const unsafe fn get_unchecked_mut<I>(&mut self, index: I) -> &mut I::Output
-    where I: [const] std::slice::SliceIndex<[T]> {
-        unsafe { self.as_mut_slice().get_unchecked_mut(index) }
     }
 
     pub fn into_vec(self, len: usize) -> Vec<T>
     where T: Clone {
-        match self.buf {
-            Buf::Stack(stack) => stack[..len].to_vec(),
-            Buf::Heap(mut heap) => {
+        debug_assert!(len <= self.capacity());
+
+        match self {
+            Self::Stack(stack) => unsafe { stack[..len].assume_init_ref() }.to_vec(),
+            Self::Heap(mut heap) => {
                 unsafe { heap.set_len(len) };
                 heap
             },
@@ -71,20 +73,41 @@ impl<T, const N: usize> StackBuf<T, N> {
 
 impl<const N: usize> StackBuf<Utf8Letter, N> {
     pub const fn as_str(&self) -> &str {
-        unsafe {
-            let letters = self.as_slice();
-            let slice = std::slice::from_raw_parts(letters.as_ptr().cast(), letters.len() * 2);
-            str::from_utf8_unchecked(slice)
-        }
+        self.as_slice().as_str()
     }
-
     pub fn into_string(self, len: usize) -> String {
         let v = self.into_vec(len);
-        unsafe {
-            let (ptr, len, cap) = v.into_raw_parts();
-            let vec = Vec::<u8>::from_raw_parts(ptr.cast(), len * 2, cap * 2);
-            String::from_utf8_unchecked(vec)
-        }
+        let (ptr, len, cap) = v.into_raw_parts();
+        let vec = unsafe { Vec::<u8>::from_raw_parts(ptr.cast(), len * 2, cap * 2) };
+        unsafe { String::from_utf8_unchecked(vec) }
+    }
+}
+
+impl<T: Copy, const N: usize> const Default for StackBuf<T, N> {
+    fn default() -> Self {
+        Self::Stack([MaybeUninit::uninit(); N])
+    }
+}
+
+impl<T, const N: usize> const Deref for StackBuf<T, N> {
+    type Target = [T];
+    fn deref(&self) -> &Self::Target {
+        self.as_slice()
+    }
+}
+impl<T, const N: usize> const DerefMut for StackBuf<T, N> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.as_mut_slice()
+    }
+}
+impl<T, const N: usize> const AsRef<[T]> for StackBuf<T, N> {
+    fn as_ref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+impl<T, const N: usize> const AsMut<[T]> for StackBuf<T, N> {
+    fn as_mut(&mut self) -> &mut [T] {
+        self.as_mut_slice()
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{alphabet::Letter, util::enum_conversion};
+use crate::{alphabet::Utf8Letter, util::enum_conversion};
 use thiserror::Error;
 
 macro_rules! impl_stem_type {
@@ -114,12 +114,15 @@ enum_conversion! {
     else { AdjectiveStemTypeError }
 }
 
-fn is_trim_letter(letter: Letter) -> bool {
-    use Letter::*;
+const fn is_trim_letter(letter: Utf8Letter) -> bool {
+    use Utf8Letter::*;
     matches!(letter, А | Е | И | Й | О | У | Ы | Ь | Э | Ю | Я | Ё)
 }
-fn identify_stem_type(stem: Letter, after: Option<Letter>) -> Option<AdjectiveStemType> {
-    use {AdjectiveStemType as StemType, Letter::*};
+const fn identify_stem_type(
+    stem: Utf8Letter,
+    after: Option<Utf8Letter>,
+) -> Option<AdjectiveStemType> {
+    use {AdjectiveStemType as StemType, Utf8Letter::*};
 
     Some(match stem {
         Г | К | Х => StemType::Type3,
@@ -136,17 +139,16 @@ fn identify_stem_type(stem: Letter, after: Option<Letter>) -> Option<AdjectiveSt
 }
 
 impl NounStemType {
-    pub fn identify(word: &str) -> Option<(&str, NounStemType)> {
-        // Read the word's last char (must be in [а-яё] range)
-        let last = Letter::from_char(word.chars().last()?)?;
+    pub const fn identify(word: &str) -> Option<(&str, NounStemType)> {
+        // Read the word's last char
+        let (word_without_last, last) = Utf8Letter::split_last(word)?;
 
         let (stem, stem_char, after) = {
             // If the last char is trimmable, exclude it from stem
             if is_trim_letter(last) {
-                let stem = unsafe { word.get_unchecked(0..(word.len() - 2)) };
-                // Read the actual last stem char (must be in [а-яё] range)
-                let stem_char = Letter::from_char(stem.chars().last()?)?;
-                (stem, stem_char, Some(last))
+                // Read the actual last stem char
+                let stem_char = Utf8Letter::split_last(word_without_last)?.1;
+                (word_without_last, stem_char, Some(last))
             } else {
                 (word, last, None)
             }
@@ -159,34 +161,37 @@ impl NounStemType {
 }
 
 impl PronounStemType {
-    pub fn identify(word: &str) -> Option<(&str, PronounStemType)> {
+    pub const fn identify(word: &str) -> Option<(&str, PronounStemType)> {
         let (stem, stem_type) = NounStemType::identify(word)?;
         Some((stem, AnyStemType::from(stem_type).try_into().ok()?))
     }
 }
 
 impl AdjectiveStemType {
-    pub fn identify(word: &str) -> Option<(&str, AdjectiveStemType, bool)> {
+    pub const fn identify(word: &str) -> Option<(&str, AdjectiveStemType, bool)> {
         let (word, is_reflexive) = {
             // Remove 'ся' suffix from reflexive adjectives
-            word.strip_suffix("ся").map_or((word, false), |x| (x, true))
+
+            // FIXME(const-hack): Replace with `.strip_suffix().map_or((word, false), |x| (x, true))`.
+            if let Some((stripped, last)) = word.as_bytes().split_last_chunk::<4>()
+                && last as &[u8] == "ся".as_bytes()
+            {
+                (unsafe { str::from_utf8_unchecked(stripped) }, true)
+            } else {
+                (word, false)
+            }
         };
 
-        let mut iter = word.chars().rev();
+        // Read the word's two ending chars
+        let (word, _ending_last_char) = Utf8Letter::split_last(word)?;
+        let (word, ending_first_char) = Utf8Letter::split_last(word)?;
 
-        // Read the word's two ending chars (both must be in [а-яё] range)
-        _/*let ending_last_char*/ = Letter::from_char(iter.next()?)?;
-        let ending_first_char = Letter::from_char(iter.next()?)?;
-
-        // Read the stem's last char (must be in [а-яё] range)
-        let stem_char = Letter::from_char(iter.next()?)?;
-
-        // Ending is always 4 bytes (2 chars) long, so slicing is safe
-        let stem = unsafe { word.get_unchecked(..(word.len() - 4)) };
+        // Read the stem's last char
+        let (_, stem_char) = Utf8Letter::split_last(word)?;
 
         // Identify the stem type from letters
         let stem_type = identify_stem_type(stem_char, Some(ending_first_char))?;
-        Some((stem, stem_type, is_reflexive))
+        Some((word, stem_type, is_reflexive))
     }
 }
 

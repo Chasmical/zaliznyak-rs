@@ -37,16 +37,19 @@ impl Adjective {
 
 impl AdjectiveInfo {
     pub fn inflect(&self, stem: &str, info: DeclInfo) -> WordBuf {
-        let buf = WordBuf::with_capacity_for(stem);
-        buf.with_buf(|dst| self.inflect_into(stem, info, dst))
+        let mut buf = WordBuf::with_capacity_for(stem);
+        buf.inflect(|dst| self.inflect_into(stem, info, dst));
+        buf
     }
     pub fn inflect_short(&self, stem: &str, info: DeclInfo, force: bool) -> Option<WordBuf> {
-        let buf = WordBuf::with_capacity_for(stem);
-        buf.with_buf_opt(|dst| self.inflect_short_into(stem, info, force, dst))
+        let mut buf = WordBuf::with_capacity_for(stem);
+        buf.inflect(|dst| self.inflect_short_into(stem, info, force, dst).unwrap_or_default());
+        if buf.is_empty() { None } else { Some(buf) }
     }
     pub fn inflect_comparative(&self, stem: &str) -> Option<WordBuf> {
-        let buf = WordBuf::with_capacity_for(stem);
-        buf.with_buf_opt(|dst| self.inflect_comparative_into(stem, dst))
+        let mut buf = WordBuf::with_capacity_for(stem);
+        buf.inflect(|dst| self.inflect_comparative_into(stem, dst).unwrap_or_default());
+        if buf.is_empty() { None } else { Some(buf) }
     }
 
     pub fn inflect_into<'a>(

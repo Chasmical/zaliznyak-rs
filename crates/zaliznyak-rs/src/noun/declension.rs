@@ -1,11 +1,10 @@
 use crate::{
-    Word, WordBuf,
-    alphabet::Utf8Letter,
     categories::{Case, CaseEx, DeclInfo, Gender, IntoNumber, Number},
     declension::{Declension, NounDeclension, NounStemType},
     noun::{Noun, NounInfo},
     stress::NounStress,
     util::InflectionBuf,
+    word::{Utf8Letter, Word, WordBuf},
 };
 
 impl Noun {

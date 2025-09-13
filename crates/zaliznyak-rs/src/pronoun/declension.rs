@@ -1,10 +1,9 @@
 use crate::{
-    Word, WordBuf,
-    alphabet::Utf8Letter,
     categories::{DeclInfo, Gender, IntoNumber},
     declension::{Declension, PronounDeclension},
     pronoun::{Pronoun, PronounInfo},
     util::InflectionBuf,
+    word::{Utf8Letter, Word, WordBuf},
 };
 
 impl Pronoun {

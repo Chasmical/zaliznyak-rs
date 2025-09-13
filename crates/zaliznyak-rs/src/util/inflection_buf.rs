@@ -1,4 +1,4 @@
-use crate::alphabet::Utf8Letter;
+use crate::word::Utf8Letter;
 
 pub(crate) struct InflectionBuf<'a> {
     start: &'a mut Utf8Letter,

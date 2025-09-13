@@ -1,11 +1,11 @@
 use crate::{
-    alphabet::utf8,
     categories::{Animacy, Gender, GenderEx, Number},
     declension::{
         AdjectiveDeclension, Declension, DeclensionKind, NounDeclension, ParseDeclensionError,
     },
     noun::NounInfo,
     util::{PartialFromStr, UnsafeParser},
+    word::utf8_letters as utf8,
 };
 use thiserror::Error;
 

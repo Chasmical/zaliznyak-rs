@@ -26,7 +26,11 @@ impl Utf8Letter {
         unsafe { std::mem::transmute(utf8) }
     }
     pub const fn from_utf8(utf8: [u8; 2]) -> Option<Self> {
-        if utf8::is_defined(utf8) { Some(unsafe { Self::from_utf8_unchecked(utf8) }) } else { None }
+        if utf8_letters::is_defined(utf8) {
+            Some(unsafe { Self::from_utf8_unchecked(utf8) })
+        } else {
+            None
+        }
     }
 
     pub const unsafe fn from_char_unchecked(ch: char) -> Self {
@@ -55,24 +59,24 @@ impl Utf8Letter {
     }
 
     pub const fn is_vowel(self) -> bool {
-        use utf8::*;
+        use utf8_letters::*;
         matches!(self.to_utf8(), А | Е | И | О | У | Ы | Э | Ю | Я | Ё)
     }
     pub const fn is_hissing(self) -> bool {
-        use utf8::*;
+        use utf8_letters::*;
         matches!(self.to_utf8(), Ж | Ч | Ш | Щ)
     }
     pub const fn is_sibilant(self) -> bool {
-        use utf8::*;
+        use utf8_letters::*;
         matches!(self.to_utf8(), Ж | Ц | Ч | Ш | Щ)
     }
     pub const fn is_non_sibilant_consonant(self) -> bool {
-        use utf8::*;
+        use utf8_letters::*;
         matches!(self.to_utf8(), Б | В | Г | Д | З | Й | К | Л | М | Н | П | Р | С | Т | Ф | Х)
     }
     #[rustfmt::skip]
     pub const fn is_consonant(self) -> bool {
-        use utf8::*;
+        use utf8_letters::*;
         matches!(self.to_utf8(), Б | В | Г | Д | Ж | З | Й | К | Л | М | Н | П | Р | С | Т | Ф | Х | Ц | Ч | Ш | Щ)
     }
 
@@ -84,7 +88,7 @@ impl Utf8Letter {
             return None;
         }
         let chunks = unsafe { s.as_bytes().as_chunks_unchecked::<2>() };
-        if chunks.iter().all(|x| utf8::is_defined(*x)) {
+        if chunks.iter().all(|x| utf8_letters::is_defined(*x)) {
             Some(unsafe { Self::from_str_unchecked(s) })
         } else {
             None
@@ -116,7 +120,7 @@ impl const Utf8LetterExt for [Utf8Letter] {
 }
 
 #[allow(dead_code)]
-pub(crate) mod utf8 {
+pub(crate) mod utf8_letters {
     use super::Utf8Letter;
 
     macro_rules! define_consts {

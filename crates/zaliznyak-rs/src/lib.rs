@@ -20,14 +20,11 @@
 #![allow(internal_features, confusable_idents)]
 
 pub mod adjective;
-pub mod alphabet;
 pub mod categories;
 pub mod declension;
 pub mod noun;
 pub mod pronoun;
 pub mod stress;
+pub mod word;
 
 mod util;
-mod word_buf;
-
-pub use word_buf::*;

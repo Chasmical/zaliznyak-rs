@@ -1,6 +1,6 @@
 use crate::{
-    alphabet::{Utf8Letter, Utf8LetterExt},
     util::{InflectionBuf, StackBuf},
+    word::{Utf8Letter, Utf8LetterExt},
 };
 
 type Pos = u8;

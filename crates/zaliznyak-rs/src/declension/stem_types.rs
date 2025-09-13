@@ -1,4 +1,4 @@
-use crate::{alphabet::Utf8Letter, util::enum_conversion};
+use crate::{util::enum_conversion, word::Utf8Letter};
 use thiserror::Error;
 
 macro_rules! impl_stem_type {

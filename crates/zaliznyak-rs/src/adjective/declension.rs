@@ -1,11 +1,10 @@
 use crate::{
-    Word, WordBuf,
     adjective::{Adjective, AdjectiveInfo, AdjectiveKind},
-    alphabet::Utf8Letter,
     categories::{DeclInfo, Gender, IntoNumber},
     declension::{AdjectiveDeclension, Declension},
     stress::AdjectiveStress,
     util::InflectionBuf,
+    word::{Utf8Letter, Word, WordBuf},
 };
 
 impl Adjective {

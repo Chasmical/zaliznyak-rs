@@ -1,4 +1,4 @@
-use crate::alphabet::{Utf8Letter, Utf8LetterExt};
+use crate::word::{Utf8Letter, Utf8LetterExt};
 use std::{
     mem::MaybeUninit,
     ops::{Deref, DerefMut},

@@ -2,13 +2,13 @@
 
 mod const_utils;
 mod inflection_buf;
-mod stack_buf;
+mod stack_vec;
 mod unsafe_buf;
 mod unsafe_parser;
 
 pub(crate) use const_utils::*;
 pub(crate) use inflection_buf::*;
-pub(crate) use stack_buf::*;
+pub(crate) use stack_vec::*;
 pub(crate) use unsafe_buf::*;
 pub(crate) use unsafe_parser::*;
 

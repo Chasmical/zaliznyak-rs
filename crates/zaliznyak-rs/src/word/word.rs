@@ -1,43 +1,28 @@
 use crate::{
-    util::{InflectionBuf, StackBuf},
+    util::{InflectionBuf, StackVec},
     word::{Utf8Letter, Utf8LetterSlice},
 };
 
-pub(super) type Pos = u8;
-
-#[derive(Debug, Copy, Eq, Hash)]
+#[derive(Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 pub(super) struct WordInfo {
-    pub(super) len: Pos,
-    pub(super) stem_len: Pos,
-    pub(super) insert_stress_pos: Pos,
+    pub(super) stem_len: usize,
+    pub(super) insert_stress_pos: usize,
 }
 
-#[derive_const(Default)]
+#[derive(Clone, Eq, Hash)]
+#[derive_const(Default, PartialEq)]
 pub struct WordBuf {
     // Declinable parts of Russian words very rarely exceed 15 letters
-    pub(super) buf: StackBuf<Utf8Letter, 15>,
+    pub(super) buf: StackVec<Utf8Letter, 15>,
     pub(super) info: WordInfo,
 }
 
-#[derive(Copy)]
-#[derive_const(Clone)]
+#[derive(Copy, Eq, Hash)]
+#[derive_const(Default, Clone, PartialEq)]
 pub struct Word<'a> {
-    pub(super) buf: &'a Utf8Letter,
+    pub(super) buf: &'a [Utf8Letter],
     pub(super) info: WordInfo,
-}
-
-impl WordInfo {
-    pub const fn entire<'a>(&self, slice: &'a Utf8Letter) -> &'a [Utf8Letter] {
-        unsafe { std::slice::from_raw_parts(slice, self.len as _) }
-    }
-    pub const fn stem<'a>(&self, slice: &'a Utf8Letter) -> &'a [Utf8Letter] {
-        unsafe { std::slice::from_raw_parts(slice, self.stem_len as _) }
-    }
-    pub const fn ending<'a>(&self, slice: &'a Utf8Letter) -> &'a [Utf8Letter] {
-        let start = unsafe { (&raw const *slice).add(self.stem_len as _) };
-        unsafe { std::slice::from_raw_parts(start, (self.len - self.stem_len) as _) }
-    }
 }
 
 impl WordBuf {
@@ -45,20 +30,20 @@ impl WordBuf {
         Self::with_capacity(InflectionBuf::max_char_len_for_noun(stem.len()))
     }
     pub fn with_capacity(cap: usize) -> Self {
-        Self { buf: StackBuf::with_capacity(cap), info: Default::default() }
+        Self { buf: StackVec::with_capacity(cap), info: Default::default() }
     }
 
     pub fn is_empty(&self) -> bool {
-        self.info.len == 0
+        self.buf.is_empty()
     }
     pub const fn as_letters(&self) -> &[Utf8Letter] {
-        self.info.entire(unsafe { &*self.buf.as_ptr() })
+        &self.buf
     }
     pub const fn stem_letters(&self) -> &[Utf8Letter] {
-        self.info.stem(unsafe { &*self.buf.as_ptr() })
+        unsafe { self.buf.get_unchecked(..self.info.stem_len) }
     }
     pub const fn ending_letters(&self) -> &[Utf8Letter] {
-        self.info.ending(unsafe { &*self.buf.as_ptr() })
+        unsafe { self.buf.get_unchecked(self.info.stem_len..) }
     }
     pub const fn as_str(&self) -> &str {
         self.as_letters().as_str()
@@ -71,37 +56,39 @@ impl WordBuf {
     }
 
     pub const fn borrow(&self) -> Word<'_> {
-        Word { buf: unsafe { &*self.buf.as_ptr() }, info: self.info }
+        Word { buf: &self.buf, info: self.info }
     }
 
     pub fn inflect<F: FnOnce(&mut [Utf8Letter]) -> Word<'_>>(&mut self, f: F) {
-        let word = f(&mut self.buf);
+        let dst = unsafe { self.buf.slice_full_capacity_mut().assume_init_mut() };
+        let word = f(dst);
+
         self.info = word.info;
+        let len = word.buf.len();
+        unsafe { self.buf.set_len(len) };
     }
     pub fn into_string(self) -> String {
-        self.buf.into_string(self.info.len as _)
+        self.buf.into_string()
     }
 }
 
 impl<'a> Word<'a> {
-    pub(crate) const fn new(slice: &'a [Utf8Letter], stem_len: usize) -> Self {
-        Self {
-            buf: unsafe { &*slice.as_ptr() },
-            info: WordInfo { len: slice.len() as _, stem_len: stem_len as _, insert_stress_pos: 0 },
-        }
+    // TODO: remake the constructor
+    pub(crate) const fn new(buf: &'a [Utf8Letter], stem_len: usize) -> Self {
+        Self { buf, info: WordInfo { stem_len, insert_stress_pos: 0 } }
     }
 
     pub fn is_empty(&self) -> bool {
-        self.info.len == 0
+        self.buf.is_empty()
     }
     pub const fn as_letters(&self) -> &'a [Utf8Letter] {
-        self.info.entire(self.buf)
+        self.buf
     }
     pub const fn stem_letters(&self) -> &'a [Utf8Letter] {
-        self.info.stem(self.buf)
+        unsafe { self.buf.get_unchecked(..self.info.stem_len) }
     }
     pub const fn ending_letters(&self) -> &'a [Utf8Letter] {
-        self.info.ending(self.buf)
+        unsafe { self.buf.get_unchecked(self.info.stem_len..) }
     }
     pub const fn as_str(&self) -> &'a str {
         self.as_letters().as_str()
@@ -114,45 +101,7 @@ impl<'a> Word<'a> {
     }
 
     pub fn to_owned(&self) -> WordBuf {
-        WordBuf { buf: self.as_letters().into(), info: self.info }
-    }
-}
-
-// Implement some basic traits for WordBuf manually, since they can't be auto-derived
-impl Clone for WordBuf {
-    fn clone(&self) -> Self {
-        Self { buf: self.as_letters().into(), info: self.info }
-    }
-}
-impl PartialEq for WordBuf {
-    fn eq(&self, other: &Self) -> bool {
-        self.info == other.info && self.as_letters() == other.as_letters()
-    }
-}
-impl Eq for WordBuf {}
-impl std::hash::Hash for WordBuf {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.info.hash(state);
-        self.as_letters().hash(state);
-    }
-}
-
-// Implement some basic traits for Word manually, since they can't be auto-derived
-impl const Default for Word<'_> {
-    fn default() -> Self {
-        Self { buf: unsafe { &*[].as_ptr() }, info: WordInfo::default() }
-    }
-}
-impl const PartialEq for Word<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.info == other.info && self.as_letters() == other.as_letters()
-    }
-}
-impl Eq for Word<'_> {}
-impl std::hash::Hash for Word<'_> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.info.hash(state);
-        self.as_letters().hash(state);
+        WordBuf { buf: self.buf.into(), info: self.info }
     }
 }
 

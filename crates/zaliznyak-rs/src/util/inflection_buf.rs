@@ -1,5 +1,8 @@
 use crate::word::Utf8Letter;
 
+// TODO: need to refactor this entire module to use Utf8Letter's alignment when copying,
+//   and take &[Utf8Letter] as parameters. Also maybe operate directly on Word<'_>?
+
 pub(crate) struct InflectionBuf<'a> {
     start: &'a mut Utf8Letter,
     pub(crate) stem_len: usize,

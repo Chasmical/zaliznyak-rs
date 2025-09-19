@@ -16,6 +16,8 @@
 #![feature(vec_into_raw_parts)]
 #![feature(str_from_raw_parts)]
 #![feature(maybe_uninit_slice)]
+#![feature(cast_maybe_uninit)]
+#![feature(maybe_uninit_uninit_array_transpose)]
 #![cfg_attr(test, feature(test))]
 #![allow(internal_features, confusable_idents)]
 

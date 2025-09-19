@@ -9,8 +9,10 @@ pub enum Utf8Letter {
     Ш = d('ш'), Щ = d('щ'), Ъ = d('ъ'), Ы = d('ы'), Ь = d('ь'), Э = d('э'), Ю = d('ю'), Я = d('я'),
     Ё = d('ё'),
 }
+
 #[allow(unnecessary_transmutes)]
 const fn d(ch: char) -> u16 {
+    assert!(matches!(ch, 'а'..='я' | 'ё'));
     unsafe { std::mem::transmute(encode_utf8_2(ch as u16)) }
 }
 
@@ -23,6 +25,7 @@ const fn decode_utf8_2(utf8: [u8; 2]) -> u16 {
 
 impl Utf8Letter {
     pub const unsafe fn from_utf8_unchecked(utf8: [u8; 2]) -> Self {
+        debug_assert!(utf8_letters::is_defined(utf8));
         unsafe { std::mem::transmute(utf8) }
     }
     pub const fn from_utf8(utf8: [u8; 2]) -> Option<Self> {
@@ -105,12 +108,12 @@ impl Utf8Letter {
     }
 }
 
-pub const trait Utf8LetterExt {
+pub const trait Utf8LetterSlice {
     fn as_str(&self) -> &str;
     fn as_mut_str(&mut self) -> &mut str;
 }
 
-impl const Utf8LetterExt for [Utf8Letter] {
+impl const Utf8LetterSlice for [Utf8Letter] {
     fn as_str(&self) -> &str {
         unsafe { std::str::from_raw_parts(self.as_ptr().cast(), self.len() * 2) }
     }

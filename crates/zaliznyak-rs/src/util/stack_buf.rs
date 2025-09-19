@@ -1,4 +1,4 @@
-use crate::word::{Utf8Letter, Utf8LetterExt};
+use crate::word::{Utf8Letter, Utf8LetterSlice};
 use std::{
     mem::MaybeUninit,
     ops::{Deref, DerefMut},
@@ -30,12 +30,6 @@ impl<T, const N: usize> StackBuf<T, N> {
             unsafe { vec.set_len(cap) };
             Self::Heap(vec)
         }
-    }
-    pub fn copied_from(value: &[T]) -> Self
-    where T: Copy {
-        let mut buf = Self::with_capacity(value.len());
-        buf.as_mut_slice()[..value.len()].copy_from_slice(value);
-        buf
     }
 
     pub const fn capacity(&self) -> usize {
@@ -86,6 +80,19 @@ impl<const N: usize> StackBuf<Utf8Letter, N> {
 impl<T: Copy, const N: usize> const Default for StackBuf<T, N> {
     fn default() -> Self {
         Self::Stack([MaybeUninit::uninit(); N])
+    }
+}
+
+impl<T: Copy, const N: usize> From<&[T]> for StackBuf<T, N> {
+    fn from(value: &[T]) -> Self {
+        let mut buf = Self::with_capacity(value.len());
+        buf.as_mut_slice()[..value.len()].copy_from_slice(value);
+        buf
+    }
+}
+impl<T: Copy, const N: usize, const K: usize> From<[T; K]> for StackBuf<T, N> {
+    fn from(value: [T; K]) -> Self {
+        Self::from(value.as_slice())
     }
 }
 

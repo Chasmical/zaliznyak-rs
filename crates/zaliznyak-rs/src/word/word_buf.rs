@@ -26,35 +26,45 @@ pub struct Word<'a> {
 }
 
 impl WordBuf {
+    #[must_use]
     pub(crate) fn with_capacity_for(stem: &str) -> Self {
         Self::with_capacity(InflectionBuf::max_char_len_for_noun(stem.len()))
     }
+    #[must_use]
     pub fn with_capacity(cap: usize) -> Self {
         Self { buf: StackVec::with_capacity(cap), info: Default::default() }
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.buf.is_empty()
     }
+    #[must_use]
     pub const fn as_letters(&self) -> &[Utf8Letter] {
         &self.buf
     }
+    #[must_use]
     pub const fn stem_letters(&self) -> &[Utf8Letter] {
         unsafe { self.buf.get_unchecked(..self.info.stem_len) }
     }
+    #[must_use]
     pub const fn ending_letters(&self) -> &[Utf8Letter] {
         unsafe { self.buf.get_unchecked(self.info.stem_len..) }
     }
+    #[must_use]
     pub const fn as_str(&self) -> &str {
         self.as_letters().as_str()
     }
+    #[must_use]
     pub const fn stem(&self) -> &str {
         self.stem_letters().as_str()
     }
+    #[must_use]
     pub const fn ending(&self) -> &str {
         self.ending_letters().as_str()
     }
 
+    #[must_use]
     pub const fn borrow(&self) -> Word<'_> {
         Word { buf: &self.buf, info: self.info }
     }
@@ -67,6 +77,7 @@ impl WordBuf {
         let len = word.buf.len();
         unsafe { self.buf.set_len(len) };
     }
+    #[must_use]
     pub fn into_string(self) -> String {
         self.buf.into_string()
     }
@@ -78,28 +89,36 @@ impl<'a> Word<'a> {
         Self { buf, info: WordInfo { stem_len, insert_stress_pos: 0 } }
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.buf.is_empty()
     }
+    #[must_use]
     pub const fn as_letters(&self) -> &'a [Utf8Letter] {
         self.buf
     }
+    #[must_use]
     pub const fn stem_letters(&self) -> &'a [Utf8Letter] {
         unsafe { self.buf.get_unchecked(..self.info.stem_len) }
     }
+    #[must_use]
     pub const fn ending_letters(&self) -> &'a [Utf8Letter] {
         unsafe { self.buf.get_unchecked(self.info.stem_len..) }
     }
+    #[must_use]
     pub const fn as_str(&self) -> &'a str {
         self.as_letters().as_str()
     }
+    #[must_use]
     pub const fn stem(&self) -> &'a str {
         self.stem_letters().as_str()
     }
+    #[must_use]
     pub const fn ending(&self) -> &'a str {
         self.ending_letters().as_str()
     }
 
+    #[must_use]
     pub fn to_owned(&self) -> WordBuf {
         WordBuf { buf: self.buf.into(), info: self.info }
     }

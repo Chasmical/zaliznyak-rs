@@ -14,9 +14,9 @@ fn is_cyrillic(s: &str) -> bool {
     if let (chunks, []) = s.as_bytes().as_chunks::<2>()
         && chunks.iter().all(|ch| utf8_letters::is_defined(*ch))
     {
-        return true;
+        true
     } else {
-        return false;
+        false
     }
 }
 
@@ -27,7 +27,7 @@ pub(super) fn find_implicit_insert_stress_pos(word: &[Utf8Letter]) -> Option<usi
     let mut result = Some(first_idx + 1);
 
     if first_vowel != Utf8Letter::Ё {
-        while let Some((next_idx, next_vowel)) = iter.next() {
+        for (next_idx, next_vowel) in iter {
             if next_vowel == Utf8Letter::Ё {
                 return Some(next_idx + 1);
             }

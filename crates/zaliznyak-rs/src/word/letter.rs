@@ -10,7 +10,7 @@ pub enum Utf8Letter {
     Ё = d('ё'),
 }
 
-#[allow(unnecessary_transmutes)]
+#[allow(unnecessary_transmutes, reason = "u16::from_ne_bytes breaks constants in pop-up window")]
 const fn d(ch: char) -> u16 {
     assert!(matches!(ch, 'а'..='я' | 'ё'));
     unsafe { std::mem::transmute(encode_utf8_2(ch as u16)) }
@@ -24,10 +24,12 @@ const fn decode_utf8_2(utf8: [u8; 2]) -> u16 {
 }
 
 impl Utf8Letter {
+    #[must_use]
     pub const unsafe fn from_utf8_unchecked(utf8: [u8; 2]) -> Self {
         debug_assert!(utf8_letters::is_defined(utf8));
         unsafe { std::mem::transmute(utf8) }
     }
+    #[must_use]
     pub const fn from_utf8(utf8: [u8; 2]) -> Option<Self> {
         if utf8_letters::is_defined(utf8) {
             Some(unsafe { Self::from_utf8_unchecked(utf8) })
@@ -36,9 +38,11 @@ impl Utf8Letter {
         }
     }
 
+    #[must_use]
     pub const unsafe fn from_char_unchecked(ch: char) -> Self {
         unsafe { Self::from_utf8_unchecked(encode_utf8_2(ch as u16)) }
     }
+    #[must_use]
     pub const fn from_char(ch: char) -> Option<Self> {
         if matches!(ch, 'а'..='я' | 'ё') {
             Some(unsafe { Self::from_char_unchecked(ch) })
@@ -47,57 +51,52 @@ impl Utf8Letter {
         }
     }
 
+    #[must_use]
     pub const fn to_utf8(self) -> [u8; 2] {
         unsafe { std::mem::transmute(self) }
     }
+    #[must_use]
     pub const fn as_utf8(&self) -> &[u8; 2] {
         unsafe { std::mem::transmute(self) }
     }
+    #[must_use]
     pub const fn as_str(&self) -> &str {
         unsafe { str::from_utf8_unchecked(self.as_utf8()) }
     }
 
+    #[must_use]
     pub const fn to_char(self) -> char {
         unsafe { char::from_u32_unchecked(decode_utf8_2(self.to_utf8()) as u32) }
     }
 
+    #[must_use]
     pub const fn is_vowel(self) -> bool {
         use utf8_letters::*;
         matches!(self.to_utf8(), А | Е | И | О | У | Ы | Э | Ю | Я | Ё)
     }
+    #[must_use]
     pub const fn is_hissing(self) -> bool {
         use utf8_letters::*;
         matches!(self.to_utf8(), Ж | Ч | Ш | Щ)
     }
+    #[must_use]
     pub const fn is_sibilant(self) -> bool {
         use utf8_letters::*;
         matches!(self.to_utf8(), Ж | Ц | Ч | Ш | Щ)
     }
+    #[must_use]
     pub const fn is_non_sibilant_consonant(self) -> bool {
         use utf8_letters::*;
         matches!(self.to_utf8(), Б | В | Г | Д | З | Й | К | Л | М | Н | П | Р | С | Т | Ф | Х)
     }
+    #[must_use]
     #[rustfmt::skip]
     pub const fn is_consonant(self) -> bool {
         use utf8_letters::*;
         matches!(self.to_utf8(), Б | В | Г | Д | Ж | З | Й | К | Л | М | Н | П | Р | С | Т | Ф | Х | Ц | Ч | Ш | Щ)
     }
 
-    pub const unsafe fn from_str_unchecked(s: &str) -> &[Utf8Letter] {
-        unsafe { std::slice::from_raw_parts(s.as_ptr().cast(), s.len() / 2) }
-    }
-    pub fn from_str(s: &str) -> Option<&[Utf8Letter]> {
-        if s.len() & 1 == 1 {
-            return None;
-        }
-        let chunks = unsafe { s.as_bytes().as_chunks_unchecked::<2>() };
-        if chunks.iter().all(|x| utf8_letters::is_defined(*x)) {
-            Some(unsafe { Self::from_str_unchecked(s) })
-        } else {
-            None
-        }
-    }
-
+    #[must_use]
     pub const fn split_last(s: &str) -> Option<(&str, Utf8Letter)> {
         if let Some((remaining, last)) = s.as_bytes().split_last_chunk::<2>()
             && let Some(last) = Self::from_utf8(*last)
@@ -109,7 +108,9 @@ impl Utf8Letter {
 }
 
 pub const trait Utf8LetterSlice {
+    #[must_use]
     fn as_str(&self) -> &str;
+    #[must_use]
     fn as_mut_str(&mut self) -> &mut str;
 }
 

@@ -6,6 +6,7 @@ use crate::{
     util::UnsafeParser,
 };
 
+/// Standard declension parameters: [`Case`], [`Number`], [`Gender`], [`Animacy`].
 #[derive(Debug, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 pub struct DeclInfo {
@@ -36,6 +37,7 @@ impl const IntoAnimacy for DeclInfo {
     }
 }
 
+/// Standard conjugation parameters: [`Tense`], [`Number`], [`Gender`], [`Person`].
 #[derive(Debug, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 pub struct ConjInfo {

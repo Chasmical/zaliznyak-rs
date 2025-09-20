@@ -4,6 +4,7 @@ use crate::{
 };
 use thiserror::Error;
 
+/// The error type for conversion from [`CaseEx`] to [`Case`]. Possibly returned from [`Case::try_from`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 #[error(
@@ -11,6 +12,7 @@ use thiserror::Error;
 )]
 pub struct CaseError;
 
+/// The error type for conversion from [`GenderEx`] to [`Gender`]. Possibly returned from [`Gender::try_from`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 #[error("gender must be one of the main 3: masculine, neuter or feminine")]

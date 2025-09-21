@@ -7,15 +7,20 @@ use crate::{
 };
 use thiserror::Error;
 
+/// Error type for parsing various stress types.
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Clone, PartialEq)]
 pub enum ParseStressError {
+    /// The first character is not a valid latin letter.
     #[error("invalid character in place of letter")]
     InvalidLetter,
+    /// Attempted to construct a double-primed stress othen than c″ and f″.
     #[error("invalid combination of letter and primes")]
     InvalidPrime,
+    /// The parsed value is not compatible with specified stress type.
     #[error("stress not compatible with specified type")]
     Incompatible,
+    /// Invalid format.
     #[error("invalid format")]
     Invalid,
 }

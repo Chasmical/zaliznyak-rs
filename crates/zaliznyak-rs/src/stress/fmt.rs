@@ -6,10 +6,25 @@ use crate::{
     util::UnsafeBuf,
 };
 
-// Longest form: f″/f″ (9 bytes, 4 chars)
+/// The maximum byte length of a formatted [`AnyDualStress`].
+///
+/// Longest form: f″/f″ (9 bytes, 5 chars)
 pub const DUAL_STRESS_MAX_LEN: usize = 9;
 
 impl AnyStress {
+    /// Formats this stress schema as UTF-8 into the provided byte buffer, and then returns
+    /// the subslice of the buffer that contains the encoded string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::stress::AnyStress;
+    ///
+    /// let mut buf = String::new();
+    /// buf.push_str(AnyStress::Bp.fmt_to(&mut [0; 4]));
+    /// assert_eq!(buf, "b′");
+    /// ```
+    #[must_use]
     pub const fn fmt_to(self, dst: &mut [u8; 4]) -> &mut str {
         // Write the latin letter
         dst[0] = match self.unprime() {
@@ -38,6 +53,21 @@ impl AnyStress {
 }
 
 impl AnyDualStress {
+    /// Formats this dual stress schema as UTF-8 into the provided byte buffer, and then returns
+    /// the subslice of the buffer that contains the encoded string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::stress::{AnyDualStress, AnyStress};
+    ///
+    /// let s = AnyDualStress::new(AnyStress::Fpp, Some(AnyStress::B));
+    ///
+    /// let mut buf = String::new();
+    /// buf.push_str(s.fmt_to(&mut [0; 9]));
+    /// assert_eq!(buf, "f″/b");
+    /// ```
+    #[must_use]
     pub const fn fmt_to(self, dst: &mut [u8; 9]) -> &mut str {
         let mut dst = UnsafeBuf::new(dst);
 

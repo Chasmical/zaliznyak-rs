@@ -7,48 +7,61 @@ use crate::{
 };
 use thiserror::Error;
 
+/// Error type for conversion to [`AnyStress`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 #[error("words can only have stresses a-f, a′-f′, c″ and f″")]
 pub struct AnyStressError;
+/// Error type for conversion to [`NounStress`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 #[error("nouns can only have stresses a-f, b′, d′, f′ and f″")]
 pub struct NounStressError;
+/// Error type for conversion to [`PronounStress`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 #[error("pronouns can only have stresses a, b and f")]
 pub struct PronounStressError;
+/// Error type for conversion to [`AdjectiveFullStress`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 #[error("adjectives (full form) can only have stresses a and b")]
 pub struct AdjectiveFullStressError;
+/// Error type for conversion to [`AdjectiveShortStress`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 #[error("adjectives (short form) can only have stresses a-c, a′-c′ and c″")]
 pub struct AdjectiveShortStressError;
+/// Error type for conversion to [`VerbPresentStress`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 #[error("verbs (present tense) can only have stresses a, b, c and c′")]
 pub struct VerbPresentStressError;
+/// Error type for conversion to [`VerbPastStress`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
 #[error("verbs (past tense) can only have stresses a, b, c, c′ and c″")]
 pub struct VerbPastStressError;
 
+/// Error type for conversion to [`AdjectiveStress`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Clone, PartialEq)]
 pub enum AdjectiveStressError {
+    /// The full form's stress was not compatible.
     #[error("{0}")]
     Full(#[from] AdjectiveFullStressError),
+    /// The short form's stress was not compatible.
     #[error("{0}")]
     Short(#[from] AdjectiveShortStressError),
 }
+/// Error type for conversion to [`VerbStress`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Clone, PartialEq)]
 pub enum VerbStressError {
+    /// The present tense form's stress was not compatible.
     #[error("{0}")]
     Present(#[from] VerbPresentStressError),
+    /// The past tense form's stress was not compatible.
     #[error("{0}")]
     Past(#[from] VerbPastStressError),
 }

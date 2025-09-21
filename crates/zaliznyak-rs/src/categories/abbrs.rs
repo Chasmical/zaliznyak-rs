@@ -182,6 +182,8 @@ impl Tense {
 impl Person {
     /// Converts this person to its corresponding digit.
     ///
+    /// # Examples
+    ///
     /// ```
     /// use zaliznyak::categories::Person;
     ///
@@ -198,6 +200,8 @@ impl Person {
         }
     }
     /// Converts this person to its corresponding ASCII digit.
+    ///
+    /// # Examples
     ///
     /// ```
     /// use zaliznyak::categories::Person;

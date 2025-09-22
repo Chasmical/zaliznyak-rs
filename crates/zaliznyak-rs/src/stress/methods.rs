@@ -7,6 +7,21 @@ use crate::{
 };
 
 impl AnyStress {
+    /// Returns `true` if this stress is a primary letter stress, with no primes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::stress::AnyStress;
+    ///
+    /// assert_eq!(AnyStress::F.is_primary(), true);
+    /// assert_eq!(AnyStress::Ap.is_primary(), false);
+    /// assert_eq!(AnyStress::Cpp.is_primary(), false);
+    /// ```
+    #[must_use]
+    pub const fn is_primary(self) -> bool {
+        matches!(self, Self::A | Self::B | Self::C | Self::D | Self::E | Self::F)
+    }
     /// Returns `true` if this stress has a single or double prime.
     ///
     /// # Examples
@@ -20,7 +35,7 @@ impl AnyStress {
     /// ```
     #[must_use]
     pub const fn has_any_primes(self) -> bool {
-        !matches!(self, Self::A | Self::B | Self::C | Self::D | Self::E | Self::F)
+        !self.is_primary()
     }
     /// Returns `true` if this stress has exactly one prime.
     ///
@@ -124,6 +139,24 @@ impl AnyStress {
 }
 
 impl AnyDualStress {
+    /// Returns `true` if this dual stress has both stresses specified.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::stress::{AnyDualStress, AnyStress};
+    ///
+    /// let x = AnyDualStress::new(AnyStress::A, None);
+    /// assert_eq!(x.is_dual(), false);
+    ///
+    /// let x = AnyDualStress::new(AnyStress::B, Some(AnyStress::C));
+    /// assert_eq!(x.is_dual(), true);
+    /// ```
+    #[must_use]
+    pub const fn is_dual(self) -> bool {
+        self.alt.is_some()
+    }
+
     /// Normalizes this dual stress using adjective stress abbreviation rules.
     ///
     /// If both stresses are specified, then they are returned unchanged. Otherwise, the following
@@ -189,8 +222,8 @@ impl AnyDualStress {
     /// Tries to abbreviate this dual stress using adjective stress abbreviation rules.
     ///
     /// If both stresses are specified, the following conversion is attempted: a/a --- a,
-    /// b/b --- b, a/a′ --- a′, c/c″ --- c″, and etc. If unsuccessful, or if the dual stress
-    /// is already abbreviated, returns `None`.
+    /// b/b --- b, a/a′ --- a′, c/c″ --- c″, and etc. If this dual stress is already abbreviated,
+    /// or if the conversion was unsuccessful, returns `None`.
     /// The result is not necessarily a valid [`AdjectiveStress`].
     ///
     /// # Examples
@@ -221,17 +254,18 @@ impl AnyDualStress {
     #[must_use]
     pub const fn try_abbr_adj(self) -> Option<AnyStress> {
         if let Some(alt) = self.alt
-            && !self.main.has_any_primes()
+            && self.main.is_primary()
             && self.main == alt.unprime()
         {
             return Some(alt);
         }
-        // TODO: return already abbreviated stresses???
         None
     }
     /// Tries to abbreviate this dual stress using verb stress abbreviation rules.
     ///
-    /// If alternative form stress is a, then the main form stress is returned; otherwise, `None`.
+    /// If both stresses are specified, the following conversion is attempted: a/a --- a,
+    /// b/a --- b, a′/a --- a′, c″/a --- c″, and etc. If this dual stress is already abbreviated,
+    /// or if the conversion was unsuccessful, returns `None`.
     /// The result is not necessarily a valid [`VerbStress`].
     ///
     /// # Examples
@@ -261,14 +295,14 @@ impl AnyDualStress {
     /// ```
     #[must_use]
     pub const fn try_abbr_verb(self) -> Option<AnyStress> {
-        // TODO: return already abbreviated stresses???
         if self.alt == Some(AnyStress::A) { Some(self.main) } else { None }
     }
 
     /// Tries to abbreviate this dual stress using adjective stress abbreviation rules.
     ///
     /// If both stresses are specified, the following conversion is attempted: a/a --- a,
-    /// b/b --- b, a/a′ --- a′, c/c″ --- c″, and etc.
+    /// b/b --- b, a/a′ --- a′, c/c″ --- c″, and etc. If this dual stress is already abbreviated,
+    /// or if the conversion was unsuccessful, returns this dual stress unchanged.
     /// The result is not necessarily a valid [`AdjectiveStress`].
     ///
     /// # Examples
@@ -302,8 +336,9 @@ impl AnyDualStress {
     }
     /// Tries to abbreviate this dual stress using verb stress abbreviation rules.
     ///
-    /// If alternative form stress is a, then it is set to `None`.
-    /// The result is not necessarily a valid [`VerbStress`].
+    /// If both stresses are specified, the following conversion is attempted: a/a --- a,
+    /// b/a --- b, a′/a --- a′, c″/a --- c″, and etc. If this dual stress is already abbreviated,
+    /// or if the conversion was unsuccessful, returns this dual stress unchanged.
     ///
     /// # Examples
     ///

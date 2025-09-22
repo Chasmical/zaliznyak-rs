@@ -94,22 +94,22 @@ pub enum VerbStressError {
 
 // Convert simple stresses to AnyStress, and vice versa
 enum_conversion! {
-    NounStress => AnyStress { A, B, C, D, E, F, Bp, Dp, Fp, Fpp } else { NounStressError }
+    AnyStress => NounStress { A, B, C, D, E, F, Bp, Dp, Fp, Fpp } else { NounStressError }
 }
 enum_conversion! {
-    PronounStress => AnyStress { A, B, F } else { PronounStressError }
+    AnyStress => PronounStress { A, B, F } else { PronounStressError }
 }
 enum_conversion! {
-    AdjectiveFullStress => AnyStress { A, B } else { AdjectiveFullStressError }
+    AnyStress => AdjectiveFullStress { A, B } else { AdjectiveFullStressError }
 }
 enum_conversion! {
-    AdjectiveShortStress => AnyStress { A, B, C, Ap, Bp, Cp, Cpp } else { AdjectiveShortStressError }
+    AnyStress => AdjectiveShortStress { A, B, C, Ap, Bp, Cp, Cpp } else { AdjectiveShortStressError }
 }
 enum_conversion! {
-    VerbPresentStress => AnyStress { A, B, C, Cp } else { VerbPresentStressError }
+    AnyStress => VerbPresentStress { A, B, C, Cp } else { VerbPresentStressError }
 }
 enum_conversion! {
-    VerbPastStress => AnyStress { A, B, C, Cp, Cpp } else { VerbPastStressError }
+    AnyStress => VerbPastStress { A, B, C, Cp, Cpp } else { VerbPastStressError }
 }
 
 // Convert simple stresses to AnyDualStress

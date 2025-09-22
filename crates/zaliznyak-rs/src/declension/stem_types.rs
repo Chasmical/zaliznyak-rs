@@ -104,13 +104,13 @@ impl_stem_type! {
 }
 
 enum_conversion! {
-    NounStemType => AnyStemType { Type1, Type2, Type3, Type4, Type5, Type6, Type7, Type8 }
+    AnyStemType => NounStemType { Type1, Type2, Type3, Type4, Type5, Type6, Type7, Type8 }
 }
 enum_conversion! {
-    PronounStemType => AnyStemType { Type1, Type2, Type4, Type6 } else { PronounStemTypeError }
+    AnyStemType => PronounStemType { Type1, Type2, Type4, Type6 } else { PronounStemTypeError }
 }
 enum_conversion! {
-    AdjectiveStemType => AnyStemType { Type1, Type2, Type3, Type4, Type5, Type6, Type7 }
+    AnyStemType => AdjectiveStemType { Type1, Type2, Type3, Type4, Type5, Type6, Type7 }
     else { AdjectiveStemTypeError }
 }
 

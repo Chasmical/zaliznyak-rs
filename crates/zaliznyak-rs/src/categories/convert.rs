@@ -19,8 +19,8 @@ pub struct CaseError;
 pub struct GenderError;
 
 enum_conversion! {
-    Case => CaseEx { Nominative, Genitive, Dative, Accusative, Instrumental, Prepositional } else { CaseError }
+    CaseEx => Case { Nominative, Genitive, Dative, Accusative, Instrumental, Prepositional } else { CaseError }
 }
 enum_conversion! {
-    Gender => GenderEx { Masculine, Neuter, Feminine } else { GenderError }
+    GenderEx => Gender { Masculine, Neuter, Feminine } else { GenderError }
 }

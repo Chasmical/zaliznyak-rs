@@ -118,17 +118,17 @@ impl AdjectiveDeclension {
     }
 
     const fn lookup_ending_indices(self, info: DeclInfo, case_form: u8) -> (u8, u8) {
-        // [case+short form:7] [gender|plural:4] [stem_type:7] = [total:196]
+        // [case+short form:7] [gender|plural:4] [stem_type:6] = [total:168]
         let mut index = case_form as usize;
         index = index * 4 + (if info.is_singular() { info.gender as usize } else { 3 });
-        index = index * 7 + self.stem_type as usize;
+        index = index * 6 + self.stem_type as usize;
 
         let mut indices = *unsafe { ADJECTIVE_LOOKUP.get_unchecked(index) };
 
         // 0 means that the ending depends on animacy (accusative case)
         if indices.0 == 0 {
             // Adjust index for new case (acc -> nom/gen)
-            index -= (info.case as usize - info.animacy.acc_case() as usize) * (4 * 7);
+            index -= (info.case as usize - info.animacy.acc_case() as usize) * (4 * 6);
             indices = *unsafe { ADJECTIVE_LOOKUP.get_unchecked(index) };
         }
         indices

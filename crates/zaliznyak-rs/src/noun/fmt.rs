@@ -5,7 +5,7 @@ use crate::{
     util::UnsafeBuf,
 };
 
-// Longest form: мн. неод. <п 7°*f″/f″①②③, ё—> (50 bytes, 29 chars)
+// Longest form: мн. неод. <п 6°*f″/f″①②③, ё—> (50 bytes, 29 chars)
 // Max additions: мн. неод. <п —> (+24 bytes, +15 chars)
 pub const NOUN_INFO_MAX_LEN: usize = DECLENSION_MAX_LEN + 24;
 

@@ -266,7 +266,7 @@ mod tests {
         assert_ok("4b(1)②", Type4, S::B_B, DF::CIRCLED_ONE | DF::CIRCLED_TWO);
         assert_ok("5b/c(1), ё", Type5, S::B_C, DF::CIRCLED_ONE | DF::ALTERNATING_YO);
         assert_ok("6a/c′②", Type6, S::A_Cp, DF::CIRCLED_TWO);
-        assert_ok("7°*b/c''(1)(2)③, ё", Type7, S::B_Cpp, DF::all());
+        assert_ok("6°*b/c''(1)(2)③, ё", Type6, S::B_Cpp, DF::all());
 
         assert_err("2c", Error::IncompatibleStress);
         assert_err("2a/f", Error::IncompatibleStress);

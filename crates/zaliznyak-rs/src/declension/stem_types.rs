@@ -5,7 +5,7 @@ macro_rules! impl_stem_type {
     (
         $(#[$outer:meta])*
         $vis:vis enum $T:ident {
-            $( $(#[$inner:meta])* $variant:ident = $value:expr ),+ $(,)?
+            $( $(#[$inner:meta])* $variant:ident => $value:expr ),+ $(,)?
         }
     ) => (
         $(#[$outer])*
@@ -83,38 +83,38 @@ pub struct PronounStemTypeError;
 /// Error type for conversion to [`AdjectiveStemType`].
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
-#[error("adjectives can only have stem types 1 through 7")]
+#[error("adjectives can only have stem types 1 through 6")]
 pub struct AdjectiveStemTypeError;
 
 impl_stem_type! {
     /// Any word's stem type. Can be converted to and from any other stem type.
     /// [See the dictionary for more details](https://gramdict.ru/declension/symbols#meaning1).
     pub enum AnyStemType {
-        Type1 = 1, Type2 = 2, Type3 = 3, Type4 = 4,
-        Type5 = 5, Type6 = 6, Type7 = 7, Type8 = 8,
+        Type1 => 1, Type2 => 2, Type3 => 3, Type4 => 4,
+        Type5 => 5, Type6 => 6, Type7 => 7, Type8 => 8,
     }
 }
 impl_stem_type! {
     /// A non stem type.
     /// [See the dictionary for more details](https://gramdict.ru/declension/symbols#meaning1).
     pub enum NounStemType {
-        Type1 = 1, Type2 = 2, Type3 = 3, Type4 = 4,
-        Type5 = 5, Type6 = 6, Type7 = 7, Type8 = 8,
+        Type1 => 1, Type2 => 2, Type3 => 3, Type4 => 4,
+        Type5 => 5, Type6 => 6, Type7 => 7, Type8 => 8,
     }
 }
 impl_stem_type! {
     /// A pronoun stem type.
     /// [See the dictionary for more details](https://gramdict.ru/declension/symbols#meaning1).
     pub enum PronounStemType {
-        Type1 = 1, Type2 = 2, Type4 = 4, Type6 = 6,
+        Type1 => 1, Type2 => 2, Type4 => 4, Type6 => 6,
     }
 }
 impl_stem_type! {
     /// An adjective stem type.
     /// [See the dictionary for more details](https://gramdict.ru/declension/symbols#meaning1).
     pub enum AdjectiveStemType {
-        Type1 = 1, Type2 = 2, Type3 = 3, Type4 = 4,
-        Type5 = 5, Type6 = 6, Type7 = 7,
+        Type1 => 1, Type2 => 2, Type3 => 3, Type4 => 4,
+        Type5 => 5, Type6 => 6,
     }
 }
 
@@ -125,7 +125,7 @@ enum_conversion! {
     AnyStemType => PronounStemType { Type1, Type2, Type4, Type6 } else { PronounStemTypeError }
 }
 enum_conversion! {
-    AnyStemType => AdjectiveStemType { Type1, Type2, Type3, Type4, Type5, Type6, Type7 }
+    AnyStemType => AdjectiveStemType { Type1, Type2, Type3, Type4, Type5, Type6 }
     else { AdjectiveStemTypeError }
 }
 
@@ -136,18 +136,18 @@ const fn is_trim_letter(letter: Utf8Letter) -> bool {
 const fn identify_stem_type(
     stem: Utf8Letter,
     after: Option<Utf8Letter>,
-) -> Option<AdjectiveStemType> {
-    use {AdjectiveStemType as StemType, Utf8Letter::*};
+) -> Option<AnyStemType> {
+    use Utf8Letter::*;
 
     Some(match stem {
-        Г | К | Х => StemType::Type3,
-        Ж | Ч | Ш | Щ => StemType::Type4,
-        Ц => StemType::Type5,
-        А | Е | Й | О | У | Ы | Ь | Э | Ю | Я | Ё => StemType::Type6,
-        И => StemType::Type7,
+        Г | К | Х => AnyStemType::Type3,
+        Ж | Ч | Ш | Щ => AnyStemType::Type4,
+        Ц => AnyStemType::Type5,
+        А | Е | Й | О | У | Ы | Ь | Э | Ю | Я | Ё => AnyStemType::Type6,
+        И => AnyStemType::Type7,
         Б | В | Д | З | Л | М | Н | П | Р | С | Т | Ф => {
             let hard = matches!(after, None | Some(А | О | У | Ы | Э));
-            if hard { StemType::Type1 } else { StemType::Type2 }
+            if hard { AnyStemType::Type1 } else { AnyStemType::Type2 }
         },
         Ъ => return None,
     })
@@ -188,7 +188,7 @@ impl NounStemType {
 
         // Identify the stem type from letters
         let stem_type = identify_stem_type(stem_char, after)?;
-        Some((stem, AnyStemType::from(stem_type).into()))
+        Some((stem, stem_type.into()))
     }
 }
 
@@ -244,11 +244,8 @@ impl AdjectiveStemType {
     ///     AdjectiveStemType::identify("красныйся"),
     ///     Some(("красн", AdjectiveStemType::Type1, true)),
     /// );
-    /// // TODO: there are no adjectives with stem type 7 though...
-    /// assert_eq!(
-    ///     AdjectiveStemType::identify("ниий"),
-    ///     Some(("ни", AdjectiveStemType::Type7, false)),
-    /// );
+    ///
+    /// assert_eq!(AdjectiveStemType::identify("ниий"), None); // 7 - not compatible with adjectives
     ///
     /// assert_eq!(AdjectiveStemType::identify("wxyz"), None);
     /// assert_eq!(AdjectiveStemType::identify("ы"), None);
@@ -277,7 +274,7 @@ impl AdjectiveStemType {
 
         // Identify the stem type from letters
         let stem_type = identify_stem_type(stem_char, Some(ending_first_char))?;
-        Some((word, stem_type, is_reflexive))
+        Some((word, stem_type.try_into().ok()?, is_reflexive))
     }
 }
 
@@ -326,7 +323,8 @@ mod tests {
         assert_eq!(ST::identify("светящийся"), Some(("светящ", ST::Type4, true)));
         assert_eq!(ST::identify("куцый"), Some(("куц", ST::Type5, false)));
         assert_eq!(ST::identify("голошеий"), Some(("голоше", ST::Type6, false)));
-        assert_eq!(ST::identify("сиой"), Some(("си", ST::Type7, false))); // not a real adjective
+
+        assert_eq!(ST::identify("сиой"), None); // not a real adjective, stem type 7 - incompatible
 
         assert_eq!(ST::identify("серъое"), None);
         assert_eq!(ST::identify("adjective"), None);

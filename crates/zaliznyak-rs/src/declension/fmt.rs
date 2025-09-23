@@ -50,7 +50,7 @@ impl DeclensionFlags {
     }
 }
 
-// Longest form: 7°*f″/f″①②③, ё (26 bytes, 14 chars)
+// Longest form: 6°*f″/f″①②③, ё (26 bytes, 14 chars)
 pub const DECLENSION_MAX_LEN: usize = 1 + DECLENSION_FLAGS_MAX_LEN + DUAL_STRESS_MAX_LEN;
 
 const fn fmt_declension_any(
@@ -175,9 +175,8 @@ mod tests {
         assert_fmt(Type3, S::B_B, DF::STAR, "3*b");
         assert_fmt(Type4, S::B_C, DF::CIRCLE, "4°b/c");
         assert_fmt(Type5, S::A_Ap, DF::CIRCLED_ONE | DF::CIRCLED_THREE, "5a′①③");
-        assert_fmt(Type6, S::B_Bp, DF::CIRCLE | DF::STAR | DF::ALTERNATING_YO, "6°*b′, ё");
-        assert_fmt(Type7, S::B_Cp, DF::CIRCLED_TWO | DF::CIRCLED_THREE, "7b/c′②③");
+        assert_fmt(Type6, S::B_Cp, DF::CIRCLE | DF::STAR | DF::CIRCLED_TWO, "6°*b/c′②");
         assert_fmt(Type1, S::A_Cpp, DF::STAR | DF::CIRCLED_ONE, "1*a/c″①");
-        assert_fmt(Type7, S::B_Cpp, DF::all(), "7°*b/c″①②③, ё");
+        assert_fmt(Type6, S::B_Cpp, DF::all(), "6°*b/c″①②③, ё");
     }
 }

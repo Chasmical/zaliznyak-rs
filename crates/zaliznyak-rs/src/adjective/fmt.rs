@@ -6,7 +6,7 @@ use crate::{
     util::UnsafeBuf,
 };
 
-// Longest form: числ.-п <п 7°*f″/f″①②③, ё>⌧~ (48 bytes, 28 chars)
+// Longest form: числ.-п <п 6°*f″/f″①②③, ё>⌧~ (48 bytes, 28 chars)
 // Max additions: числ.-п <п >⌧~ (+22 bytes, +14 chars)
 pub const ADJECTIVE_INFO_MAX_LEN: usize = DECLENSION_MAX_LEN + 22;
 

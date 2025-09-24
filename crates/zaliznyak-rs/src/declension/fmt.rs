@@ -42,6 +42,20 @@ impl DeclensionFlags {
         }
         dst.finish()
     }
+    /// Formats these declension flags as UTF-8 into the provided byte buffer, and then returns
+    /// a subslice of the buffer that contains the encoded string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::declension::DeclensionFlags;
+    ///
+    /// let x = DeclensionFlags::STAR | DeclensionFlags::CIRCLED_ONE;
+    /// assert_eq!(x.fmt_to(&mut [0; _]), "*①");
+    ///
+    /// let x = DeclensionFlags::CIRCLE | DeclensionFlags::ALTERNATING_YO;
+    /// assert_eq!(x.fmt_to(&mut [0; _]), "°, ё");
+    /// ```
     pub const fn fmt_to(self, dst: &mut [u8; DECLENSION_FLAGS_MAX_LEN]) -> &mut str {
         let mut dst = UnsafeBuf::new(dst);
         dst.push_fmt2(self, Self::fmt_leading_to);
@@ -50,7 +64,9 @@ impl DeclensionFlags {
     }
 }
 
-// Longest form: 6°*f″/f″①②③, ё (26 bytes, 14 chars)
+/// The maximum byte length of a formatted [`DeclensionFlags`].
+///
+/// Longest form: 6°*f″/f″①②③, ё (26 bytes, 14 chars)
 pub const DECLENSION_MAX_LEN: usize = 1 + DECLENSION_FLAGS_MAX_LEN + DUAL_STRESS_MAX_LEN;
 
 const fn fmt_declension_any(

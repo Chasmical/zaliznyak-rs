@@ -1,17 +1,16 @@
 #![allow(non_upper_case_globals)]
-
 use crate::util::slice_find;
 
-// All endings of nouns, adjectives and pronouns in one 54-char slice
+// All endings of nouns, pronouns and adjectives in one 54-char slice
 const ENDINGS: &[u8] = "аямимиееговымихемуюьююыевяяхамийогойоейомуыхыйёвахёйём".as_bytes();
 
 // [case:6] [number:2] [gender:3] [stem type:8] = [total:288]
 #[rustfmt::skip]
-pub(crate) const NOUN_LOOKUP: [(u8, u8); 288] = [
-    //    stem types: 1,    2,   3,    4,    5,    6,   7,   8
-    /* nom sg masc */ null, ь,   null, null, null, й,   й,   ь,
-    /* nom sg n    */ о,    е_ё, о,    е_о,  е_о,  е_ё, е_ё, о,
-    /* nom sg fem  */ а,    я,   а,    а,    а,    я,   я,   ь,
+pub(crate) const NOUN_LOOKUP: [Endings; 288] = [
+    //    stem types: 1,   2,   3,   4,   5,   6,   7,   8
+    /* nom sg masc */ NIL, ь,   NIL, NIL, NIL, й,   й,   ь,
+    /* nom sg n    */ о,   е/ё, о,   е/о, е/о, е/ё, е/ё, о,
+    /* nom sg fem  */ а,   я,   а,   а,   а,   я,   я,   ь,
     //    stem types: 1, 2, 3, 4, 5, 6, 7, 8
     /* nom pl masc */ ы, и, и, и, ы, и, и, и,
     /* nom pl n    */ а, я, а, а, а, я, я, а,
@@ -21,42 +20,42 @@ pub(crate) const NOUN_LOOKUP: [(u8, u8); 288] = [
     /* gen sg masc */ а, я, а, а, а, я, я, и,
     /* gen sg n    */ а, я, а, а, а, я, я, а,
     /* gen sg fem  */ ы, и, и, и, ы, и, и, и,
-    //    stem types: 1,    2,    3,    4,       5,     6,     7,     8
-    /* gen pl masc */ ов,   ей,   ов,   ей,      ев_ов, ев_ёв, ев_ёв, ей,
-    /* gen pl n    */ null, ь_ей, null, null_ей, null,  й,     й,     null,
-    /* gen pl fem  */ null, ь_ей, null, null_ей, null,  й,     й,     ей,
+    //    stem types: 1,   2,    3,   4,      5,     6,     7,     8
+    /* gen pl masc */ ов,  ей,   ов,  ей,     ев/ов, ев/ёв, ев/ёв, ей,
+    /* gen pl n    */ NIL, ь/ей, NIL, NIL/ей, NIL,   й,     й,     NIL,
+    /* gen pl fem  */ NIL, ь/ей, NIL, NIL/ей, NIL,   й,     й,     ей,
 
     //    stem types: 1, 2, 3, 4, 5, 6, 7,   8
     /* dat sg masc */ у, ю, у, у, у, ю, ю,   и,
     /* dat sg n    */ у, ю, у, у, у, ю, ю,   у,
-    /* dat sg fem  */ е, е, е, е, е, е, и_е, и,
+    /* dat sg fem  */ е, е, е, е, е, е, и/е, и,
     //    stem types: 1,  2,  3,  4,  5,  6,  7,  8
     /* dat pl masc */ ам, ям, ам, ам, ам, ям, ям, ям,
     /* dat pl n    */ ам, ям, ам, ам, ам, ям, ям, ам,
     /* dat pl fem  */ ам, ям, ам, ам, ам, ям, ям, ям,
 
     //    stem types: 1,   2,   3,   4,   5,   6,   7,   8
-    /* acc sg masc */ acc, acc, acc, acc, acc, acc, acc, acc,
-    /* acc sg n    */ acc, acc, acc, acc, acc, acc, acc, acc,
+    /* acc sg masc */ ACC, ACC, ACC, ACC, ACC, ACC, ACC, ACC,
+    /* acc sg n    */ ACC, ACC, ACC, ACC, ACC, ACC, ACC, ACC,
     /* acc sg fem  */ у,   ю,   у,   у,   у,   ю,   ю,   ь,
     //    stem types: 1,   2,   3,   4,   5,   6,   7,   8
-    /* acc pl masc */ acc, acc, acc, acc, acc, acc, acc, acc,
-    /* acc pl n    */ acc, acc, acc, acc, acc, acc, acc, acc,
-    /* acc pl fem  */ acc, acc, acc, acc, acc, acc, acc, acc,
+    /* acc pl masc */ ACC, ACC, ACC, ACC, ACC, ACC, ACC, ACC,
+    /* acc pl n    */ ACC, ACC, ACC, ACC, ACC, ACC, ACC, ACC,
+    /* acc pl fem  */ ACC, ACC, ACC, ACC, ACC, ACC, ACC, ACC,
 
     //    stem types: 1,  2,     3,  4,     5,     6,     7,     8
-    /* ins sg masc */ ом, ем_ём, ом, ем_ом, ем_ом, ем_ём, ем_ём, ем_ём,
-    /* ins sg n    */ ом, ем_ём, ом, ем_ом, ем_ом, ем_ём, ем_ём, ом,
-    /* ins sg fem  */ ой, ей_ёй, ой, ей_ой, ей_ой, ей_ёй, ей_ёй, ью,
+    /* ins sg masc */ ом, ем/ём, ом, ем/ом, ем/ом, ем/ём, ем/ём, ем/ём,
+    /* ins sg n    */ ом, ем/ём, ом, ем/ом, ем/ом, ем/ём, ем/ём, ом,
+    /* ins sg fem  */ ой, ей/ёй, ой, ей/ой, ей/ой, ей/ёй, ей/ёй, ью,
     //    stem types: 1,   2,   3,   4,   5,   6,   7,   8
     /* ins pl masc */ ами, ями, ами, ами, ами, ями, ями, ями,
     /* ins pl n    */ ами, ями, ами, ами, ами, ями, ями, ами,
     /* ins pl fem  */ ами, ями, ами, ами, ами, ями, ями, ями,
 
     //    stem types: 1, 2, 3, 4, 5, 6, 7,   8
-    /* prp sg masc */ е, е, е, е, е, е, и_е, и,
-    /* prp sg n    */ е, е, е, е, е, е, и_е, и,
-    /* prp sg fem  */ е, е, е, е, е, е, и_е, и,
+    /* prp sg masc */ е, е, е, е, е, е, и/е, и,
+    /* prp sg n    */ е, е, е, е, е, е, и/е, и,
+    /* prp sg fem  */ е, е, е, е, е, е, и/е, и,
     //    stem types: 1,  2,  3,  4,  5,  6,  7,  8
     /* prp pl masc */ ах, ях, ах, ах, ах, ях, ях, ях,
     /* prp pl n    */ ах, ях, ах, ах, ах, ях, ях, ах,
@@ -65,134 +64,145 @@ pub(crate) const NOUN_LOOKUP: [(u8, u8); 288] = [
 
 // [case:6] [gender|plural:4] [stem type:4] = [total:96]
 #[rustfmt::skip]
-pub(crate) const PRONOUN_LOOKUP: [(u8, u8); 96] = [
-    // stem types: 1,    2,   4,    6,
-    /* nom masc */ null, ь,   null, й,
-    /* nom n    */ о,    е_ё, е_о,  е_ё,
-    /* nom fem  */ а,    я,   а,    я,
-    /* nom pl   */ ы,    и,   и,    и,
+pub(crate) const PRONOUN_LOOKUP: [Endings; 96] = [
+    // stem types: 1,   2,   4,   6,
+    /* nom masc */ NIL, ь,   NIL, й,
+    /* nom n    */ о,   е/ё, е/о, е/ё,
+    /* nom fem  */ а,   я,   а,   я,
+    /* nom pl   */ ы,   и,   и,   и,
 
     // stem types: 1,  2,  4,       6,
-    /* gen masc */ а,  я,  его_ого, его,
-    /* gen n    */ а,  я,  его_ого, его,
-    /* gen fem  */ ой, ей, ей_ой,   ей,
+    /* gen masc */ а,  я,  его/ого, его,
+    /* gen n    */ а,  я,  его/ого, его,
+    /* gen fem  */ ой, ей, ей/ой,   ей,
     /* gen pl   */ ых, их, их,      их,
 
     // stem types: 1,  2,  4,       6,
-    /* dat masc */ у,  ю,  ему_ому, ему,
-    /* dat n    */ у,  ю,  ему_ому, ему,
-    /* dat fem  */ ой, ей, ей_ой,   ей,
+    /* dat masc */ у,  ю,  ему/ому, ему,
+    /* dat n    */ у,  ю,  ему/ому, ему,
+    /* dat fem  */ ой, ей, ей/ой,   ей,
     /* dat pl   */ ым, им, им,      им,
 
     // stem types: 1,   2,   4,   6,
-    /* acc masc */ acc, acc, acc, acc,
-    /* acc n    */ acc, acc, acc, acc,
+    /* acc masc */ ACC, ACC, ACC, ACC,
+    /* acc n    */ ACC, ACC, ACC, ACC,
     /* acc fem  */ у,   ю,   у,   ю,
-    /* acc pl   */ acc, acc, acc, acc,
+    /* acc pl   */ ACC, ACC, ACC, ACC,
 
     // stem types: 1,   2,   4,     6,
     /* ins masc */ ым,  им,  им,    им,
     /* ins n    */ ым,  им,  им,    им,
-    /* ins fem  */ ой,  ей,  ей_ой, ей,
+    /* ins fem  */ ой,  ей,  ей/ой, ей,
     /* ins pl   */ ыми, ими, ими,   ими,
 
     // stem types: 1,  2,     4,     6,
-    /* prp masc */ ом, ем_ём, ем_ом, ем_ём,
-    /* prp n    */ ом, ем_ём, ем_ом, ем_ём,
-    /* prp fem  */ ой, ей,    ей_ой, ей,
+    /* prp masc */ ом, ем/ём, ем/ом, ем/ём,
+    /* prp n    */ ом, ем/ём, ем/ом, ем/ём,
+    /* prp fem  */ ой, ей,    ей/ой, ей,
     /* prp pl   */ ых, их,    их,    их,
 ];
 
 // [case+short form:7] [gender|plural:4] [stem type:6] = [total:168]
 #[rustfmt::skip]
-pub(crate) const ADJECTIVE_LOOKUP: [(u8, u8); 168] = [
+pub(crate) const ADJECTIVE_LOOKUP: [Endings; 168] = [
     // stem types: 1,     2,  3,     4,     5,     6
-    /* nom masc */ ый_ой, ий, ий_ой, ий_ой, ый_ой, ий,
-    /* nom n    */ ое,    ее, ое,    ее_ое, ее_ое, ее,
+    /* nom masc */ ый/ой, ий, ий/ой, ий/ой, ый/ой, ий,
+    /* nom n    */ ое,    ее, ое,    ее/ое, ее/ое, ее,
     /* nom fem  */ ая,    яя, ая,    ая,    ая,    яя,
     /* nom pl   */ ые,    ие, ие,    ие,    ые,    ие,
 
     // stem types: 1,   2,   3,   4,       5,       6
-    /* gen masc */ ого, его, ого, его_ого, его_ого, его,
-    /* gen n    */ ого, его, ого, его_ого, его_ого, его,
-    /* gen fem  */ ой,  ей,  ой,  ей_ой,   ей_ой,   ей,
+    /* gen masc */ ого, его, ого, его/ого, его/ого, его,
+    /* gen n    */ ого, его, ого, его/ого, его/ого, его,
+    /* gen fem  */ ой,  ей,  ой,  ей/ой,   ей/ой,   ей,
     /* gen pl   */ ых,  их,  их,  их,      ых,      их,
 
     // stem types: 1,   2,   3,   4,       5,       6
-    /* dat masc */ ому, ему, ому, ему_ому, ему_ому, ему,
-    /* dat n    */ ому, ему, ому, ему_ому, ему_ому, ему,
-    /* dat fem  */ ой,  ей,  ой,  ей_ой,   ей_ой,   ей,
+    /* dat masc */ ому, ему, ому, ему/ому, ему/ому, ему,
+    /* dat n    */ ому, ему, ому, ему/ому, ему/ому, ему,
+    /* dat fem  */ ой,  ей,  ой,  ей/ой,   ей/ой,   ей,
     /* dat pl   */ ым,  им,  им,  им,      ым,      им,
 
     // stem types: 1,   2,   3,   4,   5,   6
-    /* acc masc */ acc, acc, acc, acc, acc, acc,
-    /* acc n    */ acc, acc, acc, acc, acc, acc,
+    /* acc masc */ ACC, ACC, ACC, ACC, ACC, ACC,
+    /* acc n    */ ACC, ACC, ACC, ACC, ACC, ACC,
     /* acc fem  */ ую,  юю,  ую,  ую,  ую,  юю,
-    /* acc pl   */ acc, acc, acc, acc, acc, acc,
+    /* acc pl   */ ACC, ACC, ACC, ACC, ACC, ACC,
 
     // stem types: 1,   2,   3,   4,     5,     6
     /* ins masc */ ым,  им,  им,  им,    ым,    им,
     /* ins n    */ ым,  им,  им,  им,    ым,    им,
-    /* ins fem  */ ой,  ей,  ой,  ей_ой, ей_ой, ей,
+    /* ins fem  */ ой,  ей,  ой,  ей/ой, ей/ой, ей,
     /* ins pl   */ ыми, ими, ими, ими,   ыми,   ими,
 
     // stem types: 1,  2,  3,  4,     5,     6
-    /* prp masc */ ом, ем, ом, ем_ом, ем_ом, ем,
-    /* prp n    */ ом, ем, ом, ем_ом, ем_ом, ем,
-    /* prp fem  */ ой, ей, ой, ей_ой, ей_ой, ей,
+    /* prp masc */ ом, ем, ом, ем/ом, ем/ом, ем,
+    /* prp n    */ ом, ем, ом, ем/ом, ем/ом, ем,
+    /* prp fem  */ ой, ей, ой, ей/ой, ей/ой, ей,
     /* prp pl   */ ых, их, их, их,    ых,    их,
 
-    // stem types: 1,    2,   3,    4,    5,    6
-    /* srt masc */ null, ь,   null, null, null, й,
-    /* srt n    */ о,    е_ё, о,    е_о,  е_о,  е_ё,
-    /* srt fem  */ а,    я,   а,    а,    а,    я,
-    /* srt pl   */ ы,    и,   и,    и,    ы,    и,
+    // stem types: 1,   2,   3,   4,   5,   6
+    /* srt masc */ NIL, ь,   NIL, NIL, NIL, й,
+    /* srt n    */ о,   е/ё, о,   е/о, е/о, е/ё,
+    /* srt fem  */ а,   я,   а,   а,   а,   я,
+    /* srt pl   */ ы,   и,   и,   и,   ы,   и,
 ];
 
+// Define all the possible ending constants
 macro_rules! define_endings {
     ($($ident:ident)*) => ($(
-        const $ident: (u8, u8) = encode_ending(stringify!($ident));
-    )*);
-    ($($x:ident($un_str:ident, $str:ident)),* $(,)?) => ($(
-        const $x: (u8, u8) = ($un_str.0, $str.0);
+        const $ident: Endings = Endings::encode(stringify!($ident));
     )*);
 }
-
 define_endings! {
     о е ов ы ей й ё ём ой ёй а ам ами и я ям ями ем у ю ах ях ом ев ёв ь ью // nouns
     ое его ого ые ее ий ая ие ему ую юю яя ый ых ым ыми их ому им ими // pronouns, adjectives
 }
-define_endings! {
-    // nouns
-    е_ё(е, ё), е_о(е, о), и_е(и, е),
-    ев_ёв(ев, ёв), ев_ов(ев, ов),
-    ем_ём(ем, ём), ем_ом(ем, ом),
-    ей_ёй(ей, ёй), ей_ой(ей, ой),
-    ь_ей(ь, ей), null_ей(null, ей),
-    // pronouns, adjectives
-    ее_ое(ее, ое), ый_ой(ый, ой), ий_ой(ий, ой),
-    его_ого(его, ого), ему_ому(ему, ому),
-}
 
-// Encoding format:
-//   11_xxxxxx - length   (in increments of 2 bytes; UTF-16)
-//   xx_111111 - position (in increments of 2 bytes; UTF-16)
-
-const fn encode_ending(s: &str) -> (u8, u8) {
-    let start = slice_find(ENDINGS, s.as_bytes()).unwrap();
-    let encoded = (((s.len() >> 1) << 6) | (start >> 1)) as u8;
-    (encoded, encoded)
-}
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
+pub(super) struct Endings(u8, u8);
 
 // Special constant for accusative case endings that depend on animacy.
-const acc: (u8, u8) = (0x00, 0x00);
+const ACC: Endings = Endings(0x00, 0x00);
 // Special constant for "" (null) ending (pos=1, len=0).
-const null: (u8, u8) = (0x01, 0x01);
+const NIL: Endings = Endings(0x01, 0x01);
 
-pub(crate) const fn get_ending_by_index(index: u8) -> &'static str {
-    unsafe {
-        let start = ENDINGS.as_ptr().add(((index & 0x3F) << 1) as usize);
-        let len = ((index >> 5) & 0b110) as usize;
-        str::from_utf8_unchecked(std::slice::from_raw_parts(start, len))
+impl Endings {
+    pub const fn is_acc(&self) -> bool {
+        self.0 == 0
+    }
+    pub const fn invariant(&self) -> bool {
+        self.0 == self.1
+    }
+
+    const fn encode(s: &str) -> Self {
+        // Encoding format:
+        //   11_xxxxxx - length   (in increments of 2 bytes; UTF-16)
+        //   xx_111111 - position (in increments of 2 bytes; UTF-16)
+
+        let start = slice_find(ENDINGS, s.as_bytes()).unwrap();
+        let encoded = (((s.len() >> 1) << 6) | (start >> 1)) as u8;
+        Self(encoded, encoded)
+    }
+
+    // FIXME(const-hack): use const closure here instead for determining stress
+    pub const fn get(self, is_stressed: bool) -> &'static str {
+        // Ensure that the accusative case is handled properly by outside code
+        debug_assert!(!self.is_acc());
+
+        unsafe {
+            let index = if is_stressed { self.1 } else { self.0 };
+            let start = ENDINGS.as_ptr().add(((index & 0x3F) << 1) as usize);
+            let len = ((index >> 5) & 0b110) as usize;
+            str::from_utf8_unchecked(std::slice::from_raw_parts(start, len))
+        }
+    }
+}
+
+impl const std::ops::Div for Endings {
+    type Output = Self;
+    fn div(self, rhs: Self) -> Self::Output {
+        Self(self.0, rhs.1)
     }
 }

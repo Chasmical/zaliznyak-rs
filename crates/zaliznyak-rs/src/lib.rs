@@ -2,6 +2,7 @@
 #![feature(derive_const)]
 #![feature(core_intrinsics)]
 #![feature(const_cmp)]
+#![feature(const_ops)]
 #![feature(const_try)]
 #![feature(const_clone)]
 #![feature(const_index)]

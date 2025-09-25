@@ -16,15 +16,59 @@ macro_rules! impl_stem_type {
         }
 
         impl $T {
+            #[doc = concat!("Converts a digit to a [`", stringify!($T), "`].")]
+            ///
+            /// # Examples
+            ///
+            /// ```
+            #[doc = concat!("use zaliznyak::declension::", stringify!($T), ";")]
+            ///
+            #[doc = concat!("assert_eq!(", stringify!($T), "::from_digit(0), None);")]
+            #[doc = concat!("assert_eq!(", stringify!($T), "::from_digit(4), Some(", stringify!($T), "::Type4));")]
+            #[doc = concat!("assert_eq!(", stringify!($T), "::from_digit(9), None);")]
+            /// ```
             pub const fn from_digit(digit: u8) -> Option<Self> {
                 Some(match digit { $($value => <$T>::$variant,)+ _ => return None })
             }
+            #[doc = concat!("Converts an ASCII digit to a [`", stringify!($T), "`].")]
+            ///
+            /// # Examples
+            ///
+            /// ```
+            #[doc = concat!("use zaliznyak::declension::", stringify!($T), ";")]
+            ///
+            #[doc = concat!("assert_eq!(", stringify!($T), "::from_ascii_digit(b'0'), None);")]
+            #[doc = concat!("assert_eq!(", stringify!($T), "::from_ascii_digit(b'4'), Some(", stringify!($T), "::Type4));")]
+            #[doc = concat!("assert_eq!(", stringify!($T), "::from_ascii_digit(b'9'), None);")]
+            /// ```
             pub const fn from_ascii_digit(ascii_digit: u8) -> Option<Self> {
                 Self::from_digit(ascii_digit - b'0')
             }
+            /// Converts this stem type to its corresponding digit.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            #[doc = concat!("use zaliznyak::declension::", stringify!($T), ";")]
+            ///
+            #[doc = concat!("assert_eq!(", stringify!($T), "::Type1.to_digit(), 1);")]
+            #[doc = concat!("assert_eq!(", stringify!($T), "::Type4.to_digit(), 4);")]
+            #[doc = concat!("assert_eq!(", stringify!($T), "::Type6.to_digit(), 6);")]
+            /// ```
             pub const fn to_digit(self) -> u8 {
                 match self { $(<$T>::$variant => $value,)+ }
             }
+            /// Converts this stem type to its corresponding ASCII digit.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            #[doc = concat!("use zaliznyak::declension::", stringify!($T), ";")]
+            ///
+            #[doc = concat!("assert_eq!(", stringify!($T), "::Type1.to_ascii_digit(), b'1');")]
+            #[doc = concat!("assert_eq!(", stringify!($T), "::Type4.to_ascii_digit(), b'4');")]
+            #[doc = concat!("assert_eq!(", stringify!($T), "::Type6.to_ascii_digit(), b'6');")]
+            /// ```
             pub const fn to_ascii_digit(self) -> u8 {
                 b'0' + self.to_digit()
             }
@@ -162,12 +206,16 @@ impl NounStemType {
     /// use zaliznyak::declension::NounStemType;
     ///
     /// assert_eq!(NounStemType::identify("акулы"), Some(("акул", NounStemType::Type1)));
+    /// assert_eq!(NounStemType::identify("тополь"), Some(("топол", NounStemType::Type2)));
     /// assert_eq!(NounStemType::identify("точка"), Some(("точк", NounStemType::Type3)));
+    /// assert_eq!(NounStemType::identify("дача"), Some(("дач", NounStemType::Type4)));
     /// assert_eq!(NounStemType::identify("блюдца"), Some(("блюдц", NounStemType::Type5)));
+    /// assert_eq!(NounStemType::identify("бельё"), Some(("бель", NounStemType::Type6)));
     /// assert_eq!(NounStemType::identify("литий"), Some(("лити", NounStemType::Type7)));
     ///
     /// assert_eq!(NounStemType::identify("циркъ"), None);
     /// assert_eq!(NounStemType::identify("wxyz"), None);
+    /// assert_eq!(NounStemType::identify("wxyzя"), None);
     /// assert_eq!(NounStemType::identify("ы"), None);
     /// assert_eq!(NounStemType::identify(""), None);
     /// ```
@@ -201,14 +249,17 @@ impl PronounStemType {
     /// use zaliznyak::declension::PronounStemType;
     ///
     /// assert_eq!(PronounStemType::identify("один"), Some(("один", PronounStemType::Type1)));
+    /// assert_eq!(PronounStemType::identify("господень"), Some(("господен", PronounStemType::Type2)));
     /// assert_eq!(PronounStemType::identify("наши"), Some(("наш", PronounStemType::Type4)));
-    /// assert_eq!(PronounStemType::identify("своё"), Some(("сво", PronounStemType::Type6)));
+    /// assert_eq!(PronounStemType::identify("твоё"), Some(("тво", PronounStemType::Type6)));
     ///
-    /// assert_eq!(PronounStemType::identify("точки"), None); // 3 - not compatible with pronouns
+    /// assert_eq!(PronounStemType::identify("сёмга"), None); // 3 - not compatible with pronouns
     /// assert_eq!(PronounStemType::identify("солнце"), None); // 5 - not compatible with pronouns
-    /// assert_eq!(PronounStemType::identify("чий"), None); // 7 - not compatible with pronouns
+    /// assert_eq!(PronounStemType::identify("бытие"), None); // 7 - not compatible with pronouns
     ///
+    /// assert_eq!(PronounStemType::identify("циркъ"), None);
     /// assert_eq!(PronounStemType::identify("wxyz"), None);
+    /// assert_eq!(PronounStemType::identify("wxyzь"), None);
     /// assert_eq!(PronounStemType::identify("ы"), None);
     /// assert_eq!(PronounStemType::identify(""), None);
     /// ```
@@ -225,31 +276,25 @@ impl AdjectiveStemType {
     /// # Examples
     ///
     /// ```
-    /// use zaliznyak::declension::AdjectiveStemType;
+    /// use zaliznyak::declension::AdjectiveStemType as StemType;
     ///
-    /// assert_eq!(
-    ///     AdjectiveStemType::identify("красный"),
-    ///     Some(("красн", AdjectiveStemType::Type1, false)),
-    /// );
-    /// assert_eq!(
-    ///     AdjectiveStemType::identify("мягкая"),
-    ///     Some(("мягк", AdjectiveStemType::Type3, false)),
-    /// );
-    /// assert_eq!(
-    ///     AdjectiveStemType::identify("светящееся"),
-    ///     Some(("светящ", AdjectiveStemType::Type4, true)),
-    /// );
+    /// assert_eq!(StemType::identify("живое"), Some(("жив", StemType::Type1, false)));
+    /// assert_eq!(StemType::identify("осенний"), Some(("осенн", StemType::Type2, false)));
+    /// assert_eq!(StemType::identify("мягкая"), Some(("мягк", StemType::Type3, false)));
+    /// assert_eq!(StemType::identify("светящийся"), Some(("светящ", StemType::Type4, true)));
+    /// assert_eq!(StemType::identify("куцые"), Some(("куц", StemType::Type5, false)));
+    /// assert_eq!(StemType::identify("голошеяя"), Some(("голоше", StemType::Type6, false)));
+    ///
     /// // TODO: should -ся be allowed for non-type-4 words?
-    /// assert_eq!(
-    ///     AdjectiveStemType::identify("красныйся"),
-    ///     Some(("красн", AdjectiveStemType::Type1, true)),
-    /// );
+    /// assert_eq!(StemType::identify("красныйся"), Some(("красн", StemType::Type1, true)));
     ///
-    /// assert_eq!(AdjectiveStemType::identify("ниий"), None); // 7 - not compatible with adjectives
+    /// assert_eq!(StemType::identify("ниий"), None); // 7 - not compatible with adjectives
     ///
-    /// assert_eq!(AdjectiveStemType::identify("wxyz"), None);
-    /// assert_eq!(AdjectiveStemType::identify("ы"), None);
-    /// assert_eq!(AdjectiveStemType::identify(""), None);
+    /// assert_eq!(StemType::identify("циркъий"), None);
+    /// assert_eq!(StemType::identify("wxyz"), None);
+    /// assert_eq!(StemType::identify("wxyzый"), None);
+    /// assert_eq!(StemType::identify("ая"), None);
+    /// assert_eq!(StemType::identify(""), None);
     /// ```
     pub const fn identify(word: &str) -> Option<(&str, AdjectiveStemType, bool)> {
         let (word, is_reflexive) = {
@@ -275,59 +320,5 @@ impl AdjectiveStemType {
         // Identify the stem type from letters
         let stem_type = identify_stem_type(stem_char, Some(ending_first_char))?;
         Some((word, stem_type.try_into().ok()?, is_reflexive))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn identify_noun() {
-        use NounStemType as ST;
-
-        assert_eq!(ST::identify("ведро"), Some(("ведр", ST::Type1)));
-        assert_eq!(ST::identify("тополь"), Some(("топол", ST::Type2)));
-        assert_eq!(ST::identify("сапог"), Some(("сапог", ST::Type3)));
-        assert_eq!(ST::identify("дача"), Some(("дач", ST::Type4)));
-        assert_eq!(ST::identify("яйцо"), Some(("яйц", ST::Type5)));
-        assert_eq!(ST::identify("бельё"), Some(("бель", ST::Type6)));
-        assert_eq!(ST::identify("литий"), Some(("лити", ST::Type7)));
-
-        assert_eq!(ST::identify("воръ"), None);
-        assert_eq!(ST::identify("noun"), None);
-        assert_eq!(ST::identify("nounя"), None);
-    }
-
-    #[test]
-    fn identify_pro() {
-        use PronounStemType as ST;
-
-        assert_eq!(ST::identify("отцов"), Some(("отцов", ST::Type1)));
-        assert_eq!(ST::identify("господень"), Some(("господен", ST::Type2)));
-        assert_eq!(ST::identify("наш"), Some(("наш", ST::Type4)));
-        assert_eq!(ST::identify("твой"), Some(("тво", ST::Type6)));
-
-        assert_eq!(ST::identify("сёмга"), None); // stem type 3 - incompatible
-        assert_eq!(ST::identify("блюдце"), None); // stem type 5 - incompatible
-        assert_eq!(ST::identify("усилие"), None); // stem type 7 - incompatible
-    }
-
-    #[test]
-    fn identify_adj() {
-        use AdjectiveStemType as ST;
-
-        assert_eq!(ST::identify("живой"), Some(("жив", ST::Type1, false)));
-        assert_eq!(ST::identify("осенний"), Some(("осенн", ST::Type2, false)));
-        assert_eq!(ST::identify("плавкий"), Some(("плавк", ST::Type3, false)));
-        assert_eq!(ST::identify("светящийся"), Some(("светящ", ST::Type4, true)));
-        assert_eq!(ST::identify("куцый"), Some(("куц", ST::Type5, false)));
-        assert_eq!(ST::identify("голошеий"), Some(("голоше", ST::Type6, false)));
-
-        assert_eq!(ST::identify("сиой"), None); // not a real adjective, stem type 7 - incompatible
-
-        assert_eq!(ST::identify("серъое"), None);
-        assert_eq!(ST::identify("adjective"), None);
-        assert_eq!(ST::identify("adjectiveое"), None);
     }
 }

@@ -13,8 +13,7 @@ impl<'a> UnsafeParser<'a> {
         unsafe { (&raw const *self.end).offset_from_unsigned(self.current) }
     }
     pub const fn remaining(&self) -> &'a [u8] {
-        // FIXME: Replace with from_ptr_range(self.current..self.end) when it's stable.
-        unsafe { std::slice::from_raw_parts(self.current, self.remaining_len()) }
+        unsafe { std::slice::from_ptr_range(self.current..self.end) }
     }
     pub const fn remaining_str(&self) -> &'a str {
         unsafe { str::from_utf8_unchecked(self.remaining()) }
@@ -23,10 +22,11 @@ impl<'a> UnsafeParser<'a> {
     pub const fn forward(&mut self, dist: usize) {
         // Check that the move distance is valid
         debug_assert!(dist <= self.remaining_len());
-        // Check that the next byte is not a UTF-8 continuation byte
-        debug_assert!(!matches!(self.peek_one().unwrap_or(&0), 0x80..=0xBF));
 
         self.current = unsafe { &*(&raw const *self.current).add(dist) };
+
+        // Check that the next byte is not a UTF-8 continuation byte
+        debug_assert!(!matches!(self.peek_one().unwrap_or(&0), 0x80..=0xBF));
     }
     pub const fn finished(&self) -> bool {
         self.remaining_len() == 0

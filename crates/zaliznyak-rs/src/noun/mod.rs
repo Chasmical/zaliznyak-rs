@@ -10,7 +10,7 @@ mod from_str;
 
 pub use from_str::*;
 
-// FIXME(const-hack): Derive Clone and PartialEq with #[derive_const] when String supports it.
+// FIXME(const-hack): Derive PartialEq with #[derive_const] when String supports it.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Noun {
     stem: String,

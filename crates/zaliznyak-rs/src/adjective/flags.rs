@@ -31,10 +31,9 @@ impl AdjectiveFlags {
             return Some(true);
         }
 
-        // FIXME(const-hack): Remove `.bits()` calls when ==/>= on bitflags is constified.
         if info.is_singular() && info.gender == Gender::Masculine {
             // ⌧ - none, — and ✕ - difficult
-            if flags.bits() == Self::BOXED_CROSS.bits() { Some(false) } else { None }
+            if flags == Self::BOXED_CROSS { Some(false) } else { None }
         } else {
             // — - ok, ✕ and ⌧ - difficult
             if flags.bits() >= Self::CROSS.bits() { None } else { Some(true) }

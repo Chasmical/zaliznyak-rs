@@ -72,7 +72,7 @@ impl AdjectiveFlags {
 
         let short_form_flags = self.intersection(Self::BOXED_CROSS);
         if !short_form_flags.is_empty() {
-            // FIXME(const-hack): Remove these consts when PartialEq on bitflags is constified.
+            // FIXME(const-hack): Remove these consts when StructuralPartialEq on bitflags is constified.
             const MINUS: u8 = AdjectiveFlags::MINUS.bits();
             const CROSS: u8 = AdjectiveFlags::CROSS.bits();
             const BOXED_CROSS: u8 = AdjectiveFlags::BOXED_CROSS.bits();

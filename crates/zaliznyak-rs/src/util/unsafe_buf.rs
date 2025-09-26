@@ -23,7 +23,7 @@ impl<'a, const N: usize> UnsafeBuf<'a, N> {
         self.end = unsafe { self.end.add(dist) };
     }
     pub const fn chunk<const K: usize>(&mut self) -> &'a mut [u8; K] {
-        unsafe { &mut *self.end.cast::<[u8; K]>() }
+        unsafe { &mut *self.end.cast_array() }
     }
 
     pub const fn push_str(&mut self, s: &str) {
@@ -37,7 +37,7 @@ impl<'a, const N: usize> UnsafeBuf<'a, N> {
 
     pub const fn push_fmt<const K: usize>(
         &mut self,
-        fmt: impl const FnOnce(&mut [u8; K]) -> &mut str,
+        fmt: impl [const] FnOnce(&mut [u8; K]) -> &mut str,
     ) {
         let len = fmt(self.chunk()).len();
         self.forward(len);
@@ -45,7 +45,7 @@ impl<'a, const N: usize> UnsafeBuf<'a, N> {
     pub const fn push_fmt2<T: std::marker::Destruct, const K: usize>(
         &mut self,
         value: T,
-        fmt: impl const FnOnce(T, &mut [u8; K]) -> &mut str,
+        fmt: impl [const] FnOnce(T, &mut [u8; K]) -> &mut str,
     ) {
         let len = fmt(value, self.chunk()).len();
         self.forward(len);

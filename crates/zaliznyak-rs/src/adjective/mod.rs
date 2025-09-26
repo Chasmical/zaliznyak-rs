@@ -7,16 +7,15 @@ mod fmt;
 
 pub use flags::*;
 
-// FIXME(const-hack): Derive Clone and PartialEq with #[derive_const] when String supports it.
+// FIXME(const-hack): Derive PartialEq with #[derive_const] when String supports it.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Adjective {
     stem: String,
     info: AdjectiveInfo,
 }
 
-// FIXME(const-hack): Derive PartialEq with #[derive_const] when AdjectiveFlags supports it.
-#[derive(Debug, Copy, PartialEq, Eq, Hash)]
-#[derive_const(Clone)]
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
 pub struct AdjectiveInfo {
     pub declension: Option<Declension>,
     pub flags: AdjectiveFlags,

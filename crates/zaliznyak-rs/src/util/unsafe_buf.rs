@@ -42,7 +42,7 @@ impl<'a, const N: usize> UnsafeBuf<'a, N> {
         let len = fmt(self.chunk()).len();
         self.forward(len);
     }
-    pub const fn push_fmt2<T: std::marker::Destruct, const K: usize>(
+    pub const fn push_fmt2<T: [const] std::marker::Destruct, const K: usize>(
         &mut self,
         value: T,
         fmt: impl [const] FnOnce(T, &mut [u8; K]) -> &mut str,

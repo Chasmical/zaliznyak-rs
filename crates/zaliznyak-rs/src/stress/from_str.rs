@@ -73,13 +73,13 @@ impl const PartialFromStr for AnyDualStress {
     }
 }
 
-impl std::str::FromStr for AnyStress {
+impl const std::str::FromStr for AnyStress {
     type Err = ParseStressError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_str_or_err(s, ParseStressError::Invalid)
     }
 }
-impl std::str::FromStr for AnyDualStress {
+impl const std::str::FromStr for AnyDualStress {
     type Err = ParseStressError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_str_or_err(s, ParseStressError::Invalid)
@@ -90,7 +90,7 @@ macro_rules! derive_simple_from_str_impls {
     ($(
         $any:ty { $($t:ty),+ $(,)? }
     )+) => ($($(
-        impl std::str::FromStr for $t {
+        impl const std::str::FromStr for $t {
             type Err = ParseStressError;
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 <$any>::from_str(s)?.try_into().or(Err(Self::Err::Incompatible))

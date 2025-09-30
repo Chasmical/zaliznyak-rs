@@ -80,7 +80,7 @@ macro_rules! impl_stem_type {
                 unsafe { str::from_utf8_unchecked(slice) }.fmt(f)
             }
         }
-        impl std::str::FromStr for $T {
+        impl const std::str::FromStr for $T {
             type Err = ParseStemTypeError;
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 if let [ch] = s.as_bytes() {

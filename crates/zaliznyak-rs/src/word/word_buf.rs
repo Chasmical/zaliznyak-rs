@@ -69,7 +69,7 @@ impl WordBuf {
         Word { buf: &self.buf, info: self.info }
     }
 
-    pub fn inflect<F: FnOnce(&mut [Utf8Letter]) -> Word<'_>>(&mut self, f: F) {
+    pub const fn inflect<F: [const] FnOnce(&mut [Utf8Letter]) -> Word<'_>>(&mut self, f: F) {
         let dst = unsafe { self.buf.slice_full_capacity_mut().assume_init_mut() };
         let word = f(dst);
 

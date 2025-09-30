@@ -183,7 +183,7 @@ impl const PartialFromStr for NounInfo {
     }
 }
 
-impl std::str::FromStr for NounInfo {
+impl const std::str::FromStr for NounInfo {
     type Err = ParseNounInfoError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_str_or_err(s, Self::Err::Invalid)

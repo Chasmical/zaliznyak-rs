@@ -152,25 +152,25 @@ impl const PartialFromStr for AdjectiveDeclension {
     }
 }
 
-impl std::str::FromStr for DeclensionFlags {
+impl const std::str::FromStr for DeclensionFlags {
     type Err = ParseDeclensionError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_str_or_err(s, Self::Err::Invalid)
     }
 }
-impl std::str::FromStr for NounDeclension {
+impl const std::str::FromStr for NounDeclension {
     type Err = ParseDeclensionError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_str_or_err(s, Self::Err::Invalid)
     }
 }
-impl std::str::FromStr for PronounDeclension {
+impl const std::str::FromStr for PronounDeclension {
     type Err = ParseDeclensionError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_str_or_err(s, Self::Err::Invalid)
     }
 }
-impl std::str::FromStr for AdjectiveDeclension {
+impl const std::str::FromStr for AdjectiveDeclension {
     type Err = ParseDeclensionError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_str_or_err(s, Self::Err::Invalid)

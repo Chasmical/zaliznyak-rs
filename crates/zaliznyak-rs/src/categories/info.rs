@@ -68,6 +68,7 @@ impl const IntoPerson for ConjInfo {
     }
 }
 
+// TODO: constify DeclInfo::from_str
 impl std::str::FromStr for DeclInfo {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {

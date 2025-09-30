@@ -37,6 +37,7 @@ pub(super) fn find_implicit_insert_stress_pos(word: &[Utf8Letter]) -> Option<usi
     result
 }
 
+// TODO: constify WordBuf::from_str?
 impl std::str::FromStr for WordBuf {
     type Err = ParseWordError;
 

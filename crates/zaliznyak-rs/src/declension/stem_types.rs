@@ -139,7 +139,7 @@ impl_stem_type! {
     }
 }
 impl_stem_type! {
-    /// A non stem type.
+    /// A noun stem type.
     /// [See the dictionary for more details](https://gramdict.ru/declension/symbols#meaning1).
     pub enum NounStemType {
         Type1 => 1, Type2 => 2, Type3 => 3, Type4 => 4,

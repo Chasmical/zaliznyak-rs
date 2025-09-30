@@ -7,21 +7,29 @@ use crate::{
 };
 use thiserror::Error;
 
+/// Error type for parsing various declension types.
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Clone, PartialEq)]
 pub enum ParseDeclensionError {
+    /// The first character is not a valid stem type digit.
     #[error("invalid character in place of stem type")]
     InvalidStemType,
+    /// Error parsing stress. See [`ParseStressError`].
     #[error("error parsing stress: {0}")]
     InvalidStress(ParseStressError),
+    /// The parsed flags contained duplicate or unsorted circled digit flags.
     #[error("invalid combination or order of flags")]
     InvalidFlags,
+    /// The parsed stem type is not compatible with specified declension type.
     #[error("stem type not compatible with specified type")]
     IncompatibleStemType,
+    /// The parsed stress schema is not compatible with specified declension type.
     #[error("stress not compatible with specified type")]
     IncompatibleStress,
+    /// The parsed flags are not compatible with specified declension type.
     #[error("flags not compatible with specified type")]
     IncompatibleFlags,
+    /// Invalid format.
     #[error("invalid format")]
     Invalid,
 }

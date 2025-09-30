@@ -6,7 +6,9 @@ use crate::{
     util::UnsafeBuf,
 };
 
-// Longest form: °*①②③, ё (16 bytes, 8 chars)
+/// The maximum byte length of a formatted [`DeclensionFlags`].
+///
+/// Longest form: °*①②③, ё (16 bytes, 8 chars)
 pub const DECLENSION_FLAGS_MAX_LEN: usize = 16;
 
 impl DeclensionFlags {
@@ -64,7 +66,7 @@ impl DeclensionFlags {
     }
 }
 
-/// The maximum byte length of a formatted [`DeclensionFlags`].
+/// The maximum byte length of a formatted [`Declension`][crate::declension::Declension].
 ///
 /// Longest form: 6°*f″/f″①②③, ё (26 bytes, 14 chars)
 pub const DECLENSION_MAX_LEN: usize = 1 + DECLENSION_FLAGS_MAX_LEN + DUAL_STRESS_MAX_LEN;
@@ -86,16 +88,52 @@ const fn fmt_declension_any(
 }
 
 impl NounDeclension {
+    /// Formats this declension as UTF-8 into the provided byte buffer, and then returns a subslice
+    /// of the buffer that contains the encoded string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::declension::NounDeclension;
+    ///
+    /// let decl: NounDeclension = "2*d, ё".parse().unwrap();
+    ///
+    /// assert_eq!(decl.fmt_to(&mut [0; _]), "2*d, ё");
+    /// ```
     pub const fn fmt_to(self, dst: &mut [u8; DECLENSION_MAX_LEN]) -> &mut str {
         fmt_declension_any(dst, self.stem_type.into(), self.stress.into(), self.flags)
     }
 }
 impl PronounDeclension {
+    /// Formats this declension as UTF-8 into the provided byte buffer, and then returns a subslice
+    /// of the buffer that contains the encoded string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::declension::PronounDeclension;
+    ///
+    /// let decl: PronounDeclension = "6*b".parse().unwrap();
+    ///
+    /// assert_eq!(decl.fmt_to(&mut [0; _]), "6*b");
+    /// ```
     pub const fn fmt_to(self, dst: &mut [u8; DECLENSION_MAX_LEN]) -> &mut str {
         fmt_declension_any(dst, self.stem_type.into(), self.stress.into(), self.flags)
     }
 }
 impl AdjectiveDeclension {
+    /// Formats this declension as UTF-8 into the provided byte buffer, and then returns a subslice
+    /// of the buffer that contains the encoded string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::declension::AdjectiveDeclension;
+    ///
+    /// let decl: AdjectiveDeclension = "3*a/c''".parse().unwrap();
+    ///
+    /// assert_eq!(decl.fmt_to(&mut [0; _]), "3*a/c″");
+    /// ```
     pub const fn fmt_to(self, dst: &mut [u8; DECLENSION_MAX_LEN]) -> &mut str {
         fmt_declension_any(dst, self.stem_type.into(), self.stress.abbr(), self.flags)
     }

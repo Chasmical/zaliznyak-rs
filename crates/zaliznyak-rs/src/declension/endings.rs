@@ -1,5 +1,5 @@
 use crate::{
-    categories::{DeclInfo, Gender, IntoNumber},
+    categories::{DeclInfo, Gender, IntoAnimacy, IntoNumber},
     declension::{
         AdjectiveDeclension, NounDeclension, NounStemType, PronounDeclension, PronounStemType,
         endings_tables::{ADJECTIVE_LOOKUP, Endings, NOUN_LOOKUP, PRONOUN_LOOKUP},
@@ -122,11 +122,13 @@ impl PronounDeclension {
 
         // Check if the ending depends on animacy (accusative case)
         if endings.is_acc() {
-            // Stem type 2 pronouns' accusative case is not consistent. Normally, the endings
-            //   of either Nominative or Genitive of the same stem type are used, but those of
-            //   type 2 are "short forms", while Accusative still uses the full forms (type 4).
-            // Example: господень <мс 2>: GEN господня, but ACC господнего.
-            if self.stem_type == PronounStemType::Type2 {
+            // Stem type 2 pronouns' accusative case (animate, specifically) is not consistent.
+            // Normally, the endings of Genitive of the same stem type are used, but those of
+            // type 2 are "short forms", while accusative animate still uses the full forms,
+            // characteristic of type 4. Notably, though, accusative inanimate is unaffected.
+            //
+            // Example: господень п <мс 2*a>: GEN господня, ACC AN господнего, ACC INAN господень.
+            if self.stem_type == PronounStemType::Type2 && info.is_animate() {
                 index += PronounStemType::Type4 as usize - PronounStemType::Type2 as usize;
             }
 
@@ -208,7 +210,7 @@ impl AdjectiveDeclension {
         let mut endings = unsafe { *ADJECTIVE_LOOKUP.get_unchecked(index) };
 
         // Check if the ending depends on animacy (accusative case)
-        if endings.is_acc() {
+        if endings.is_acc() && case_form != 6 {
             // Adjust index for new case (acc -> nom/gen)
             index -= (info.case as usize - info.animacy.acc_case() as usize) * (4 * 6);
             endings = unsafe { *ADJECTIVE_LOOKUP.get_unchecked(index) };

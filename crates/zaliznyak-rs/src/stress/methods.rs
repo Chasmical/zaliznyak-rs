@@ -116,7 +116,7 @@ impl AnyStress {
         })
     }
     /// Returns the double prime version of this primary letter stress. Returns `None` if this
-    /// this stress is not a primary letter stress, or if there is no double prime version of it.
+    /// stress is not a primary letter stress, or if there is no double prime version of it.
     ///
     /// # Examples
     ///

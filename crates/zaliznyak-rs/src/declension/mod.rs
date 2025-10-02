@@ -1,3 +1,84 @@
+//! Word declension (nouns, pronouns, adjectives).
+//!
+//! This module provides types containing information necessary for standard declension of nouns,
+//! pronouns and adjectives: stem types, stress schemas (see [`stress`][crate::stress] module),
+//! and declension flags (see [`DeclensionFlags`]).
+//!
+//! # Declensions
+//!
+//! There are several ways to construct declensions:
+//!
+//! ```
+//! use zaliznyak::{
+//!     declension::{AdjectiveDeclension, AdjectiveStemType, DeclensionFlags},
+//!     stress::AdjectiveStress,
+//! };
+//!
+//! // The simplest way is to parse them from strings:
+//! let decl: AdjectiveDeclension = "3*a/c''".parse().unwrap();
+//!
+//! // Each component can also be parsed separately:
+//! let decl = AdjectiveDeclension {
+//!     stem_type: "3".parse().unwrap(),
+//!     stress: "a/c''".parse().unwrap(),
+//!     flags: "*".parse().unwrap(),
+//! };
+//!
+//! // Or you can just construct one explicitly:
+//! let decl = AdjectiveDeclension {
+//!     stem_type: AdjectiveStemType::Type3,
+//!     stress: AdjectiveStress::A_Cpp,
+//!     flags: DeclensionFlags::STAR,
+//! };
+//! ```
+//!
+//! For const contexts you can use the [`FromStr::from_str`][std::str::FromStr::from_str] fn:
+//!
+//! ```
+//! # // FIXME(const-hack): remove from_str hack example when str::parse is constified.
+//! #![feature(const_trait_impl)]
+//! #![feature(const_convert)]
+//! use std::str::FromStr;
+//! use zaliznyak::declension::AdjectiveDeclension;
+//!
+//! let decl: AdjectiveDeclension = const { FromStr::from_str("3*a/c''") }.unwrap();
+//! ```
+//!
+//! # Parsing and formatting
+//!
+//! The parsing of declensions is generally strict, but allows some ASCII sequences:
+//!
+//! - ①, ②, ③ flags can also be parsed from ASCII: `(1)` --- ①, `(2)` --- ②, `(3)` --- ③.
+//! - Stress primes can also be parsed from ASCII: `'` (apostrophe) --- `′`, `"` (quote)
+//!   and `''` (double apostrophe) --- `″`.
+//!
+//! ```
+//! use zaliznyak::declension::{AdjectiveDeclension, NounDeclension};
+//!
+//! // 4b②
+//! let x: NounDeclension = "4b(2)".parse().unwrap();
+//! let y: NounDeclension = "4b②".parse().unwrap();
+//! assert_eq!(x, y);
+//!
+//! // 2*a/c″
+//! let x: AdjectiveDeclension = "2*a/c''".parse().unwrap();
+//! let y: AdjectiveDeclension = "2*a/c\"".parse().unwrap();
+//! assert_eq!(x, y);
+//! ```
+//!
+//! Formatting always uses Unicode characters for flags and stress primes,
+//! even if the original string only used ASCII:
+//!
+//! ```
+//! use zaliznyak::declension::{AdjectiveDeclension, NounDeclension};
+//!
+//! let decl: NounDeclension = "4b(2)".parse().unwrap();
+//! assert_eq!(decl.to_string(), "4b②");
+//!
+//! let decl: AdjectiveDeclension = "2*a/c\"".parse().unwrap();
+//! assert_eq!(decl.to_string(), "2*a/c″");
+//! ```
+
 use crate::stress::{AdjectiveStress, AnyDualStress, NounStress, PronounStress};
 
 mod endings;
@@ -16,27 +97,27 @@ pub use stem_types::*;
 #[derive(Debug, Copy, Eq, Hash)]
 #[derive_const(Clone, PartialEq)]
 pub enum Declension {
-    /// A noun declension. See [`NounDeclension`].
+    /// A noun type declension. See [`NounDeclension`].
     Noun(NounDeclension),
-    /// A pronoun declension. See [`PronounDeclension`].
+    /// A pronoun type declension. See [`PronounDeclension`].
     Pronoun(PronounDeclension),
-    /// An adjective declension. See [`AdjectiveDeclension`].
+    /// An adjective type declension. See [`AdjectiveDeclension`].
     Adjective(AdjectiveDeclension),
 }
 
-/// A type of word declension.
+/// Any type of word declension.
 #[derive(Debug, Copy, Eq, Hash)]
 #[derive_const(Clone, PartialEq)]
 pub enum DeclensionKind {
-    /// A noun declension. See [`NounDeclension`].
+    /// A noun type declension. See [`NounDeclension`].
     Noun,
-    /// A pronoun declension. See [`PronounDeclension`].
+    /// A pronoun type declension. See [`PronounDeclension`].
     Pronoun,
-    /// An adjective declension. See [`AdjectiveDeclension`].
+    /// An adjective type declension. See [`AdjectiveDeclension`].
     Adjective,
 }
 
-/// A noun declension.
+/// A noun type declension.
 ///
 /// # Examples
 ///
@@ -65,7 +146,7 @@ pub struct NounDeclension {
     pub flags: DeclensionFlags,
 }
 
-/// A pronoun declension.
+/// A pronoun type declension.
 ///
 /// # Examples
 ///
@@ -94,7 +175,7 @@ pub struct PronounDeclension {
     pub flags: DeclensionFlags,
 }
 
-/// An adjective declension.
+/// An adjective type declension.
 ///
 /// # Examples
 ///

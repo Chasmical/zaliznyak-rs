@@ -1,3 +1,5 @@
+//! Grammatical categories (case, number, gender, animacy, etc.).
+//!
 //! # Grammatical number
 //!
 //! Just like English, Russian has [`Singular`] and [`Plural`] numbers, as well as singulare

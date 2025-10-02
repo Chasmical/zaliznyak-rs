@@ -1,4 +1,10 @@
-//! Stress schema types, according to Zaliznyak's classification.
+//! Stress schema types for words.
+//!
+//! This module provides types for stress schemas, as classified by Zaliznyak, for every
+//! part of speech, and methods for determining the placement of stress in the word
+//! (see `is_[stem/ending]_stressed` methods on specific stress enums), and inspecting
+//! and manipulating stress schemas (see methods on [`AnyStress`][AnyStress#implementations]
+//! and [`AnyDualStress`][AnyDualStress#implementations]).
 //!
 //! # Stress schemas
 //!
@@ -50,10 +56,12 @@
 //!
 //! # Parsing and formatting
 //!
-//! All stress types also support parsing and formatting:
+//! When parsing stresses from strings, the primes can also be represented using ASCII characters,
+//! instead of Unicode `′` (U+2032 Prime) and `″` (U+2033 Double Prime): `'` (apostrophe) --- `′`,
+//! `"` (quote) and `''` (double apostrophe) --- `″`.
 //!
 //! ```
-//! use zaliznyak::stress::*;
+//! use zaliznyak::stress::{AnyDualStress, AnyStress, NounStress};
 //!
 //! let x: NounStress = "a".parse().unwrap();
 //! assert_eq!(x, NounStress::A);
@@ -63,6 +71,9 @@
 //! assert_eq!(x, (AnyStress::Fpp, AnyStress::Fpp).into());
 //! assert_eq!(x.to_string(), "f″/f″");
 //! ```
+//!
+//! Formatting always uses Unicode characters for stress primes,
+//! even if the original string only used ASCII.
 
 mod convert;
 mod fmt;

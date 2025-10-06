@@ -1,4 +1,84 @@
 //! Lowercase cyrillic words and letters.
+//!
+//! # Words
+//!
+//! Inflected words in this library are represented using [`WordBuf`] (equivalent of [`String`])
+//! and [`Word<'_>`] (equivalent of `&`[`str`]). They still represent UTF-8-encoded strings, but
+//! can only contain lowercase cyrillic letters. The library relies on this contract to process
+//! and inflect the words significantly faster, than if reading individual UTF-8 bytes. Inflected
+//! words also contain some extra info, used by inflection: stem length and stress position.
+//!
+//! ```
+//! use zaliznyak::word::{WordBuf, Word};
+//!
+//! let buf: WordBuf = "сло́в-о".parse().unwrap();
+//!
+//! assert_eq!(buf.as_str(), "слово");
+//! assert_eq!(buf.stem(), "слов");
+//! assert_eq!(buf.ending(), "о");
+//!
+//! assert_eq!(format!("{}", buf), "сло́во");
+//! assert_eq!(format!("{:?}", buf), "сло́в-о");
+//!
+//! let word: Word = buf.borrow();
+//! ```
+//!
+//! Short words (≤10 letters) are inflected on the stack, for performance. Words longer than that
+//! are usually composite, consisting of multiple words joined together (sometimes with hyphens),
+//! and are represented using...
+//! // TODO
+//!
+//! # Letters
+//!
+//! Individual letters in words are represented using [`Utf8Letter`].
+//!
+//! ```
+//! use zaliznyak::word::{Utf8Letter::*, Utf8LetterSlice, WordBuf};
+//!
+//! // The stress here is automatically inferred to be on 'ё'
+//! let buf: WordBuf = "мёд-ом".parse().unwrap();
+//!
+//! assert_eq!(buf.as_letters(), [М, Ё, Д, О, М]);
+//! assert_eq!(buf.stem_letters(), [М, Ё, Д]);
+//! assert_eq!(buf.ending_letters(), [О, М]);
+//!
+//! assert_eq!(buf.as_letters()[0].is_consonant(), true);
+//! assert_eq!(buf.as_letters()[1].is_vowel(), true);
+//! assert_eq!(buf.as_letters()[2].as_str(), "д");
+//! assert_eq!(buf.as_letters()[2..].as_str(), "дом");
+//! ```
+//!
+//! # Parsing and formatting
+//!
+//! If present, the stress indicator in the parsed string must be in one of the following forms:
+//! `о́` (U+0301 Combining Acute Accent), `о̀` (U+0300 Combining Grave Accent), or `о'` (ASCII
+//! Apostrophe; for simple keyboard input).
+//!
+//! The stress indicator may be omitted from the parsed string, but only when it can be safely
+//! inferred from the rest of the word; that is, either a) There's only one vowel in the word that
+//! can receive stress, or b) The stress is on letter 'ё' which is always stressed in Russian words
+//! (with the only exceptions being a few foreign surnames).
+//!
+//! The ending separator (`-` ASCII Hyphen-Minus) may be used to separate the stem from the ending.
+//! If the ending separator is not present, then the entire word is assumed to be the stem.
+//!
+//! ```
+//! use zaliznyak::word::{ParseWordError, WordBuf};
+//!
+//! let buf: WordBuf = "сло'в-о".parse().unwrap();
+//! assert_eq!(format!("{:?}", buf), "сло́в-о");
+//!
+//! let buf: WordBuf = "порт".parse().unwrap();
+//! assert_eq!(format!("{:?}", buf), "по́рт");
+//!
+//! let buf: WordBuf = "мёд-ом".parse().unwrap();
+//! assert_eq!(format!("{:?}", buf), "мё́д-ом");
+//!
+//! let buf: WordBuf = "сёра̀".parse().unwrap();
+//! assert_eq!(format!("{:?}", buf), "сёра́");
+//!
+//! assert_eq!("слов-о".parse::<WordBuf>(), Err(ParseWordError::NoStress));
+//! ```
 
 mod display;
 mod from_str;

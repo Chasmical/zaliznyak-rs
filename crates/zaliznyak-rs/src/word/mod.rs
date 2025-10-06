@@ -1,3 +1,5 @@
+//! Lowercase cyrillic words and letters.
+
 mod display;
 mod from_str;
 mod letter;

@@ -1,11 +1,14 @@
 use crate::word::{Utf8Letter, WordBuf};
 use thiserror::Error;
 
+/// Error type for parsing [`WordBuf`] from a string.
 #[derive(Debug, Error, Copy, Eq, Hash)]
 #[derive_const(Clone, PartialEq)]
 pub enum ParseWordError {
-    #[error("string contains non-cyrillic characters")]
+    /// The string contained non-lowercase-cyrillic characters.
+    #[error("string contains non-lowercase-cyrillic characters")]
     NonCyrillic,
+    /// The string does not specify stress, and it can't be inferred automatically.
     #[error("string does not specify stress")]
     NoStress,
 }

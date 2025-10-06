@@ -5,7 +5,7 @@ use crate::{
     },
     noun::NounInfo,
     util::{PartialFromStr, UnsafeParser},
-    word::utf8_letters as utf8,
+    word::Utf8Letter,
 };
 use thiserror::Error;
 
@@ -31,12 +31,12 @@ impl const PartialFromStr for NounInfo {
         let mut tantum = None;
         let mut animacy = Some(Animacy::Inanimate);
 
-        let gender = match parser.peek::<2>() {
-            Some(&utf8::М) => {
+        let gender = match parser.peek_letter() {
+            Some(Utf8Letter::М) => {
                 parser.forward(2);
                 // Handle 'мо-жо' and 'мн.' cases
-                match parser.peek::<2>() {
-                    Some(&utf8::О) => {
+                match parser.peek_letter() {
+                    Some(Utf8Letter::О) => {
                         parser.forward(2);
                         animacy = Some(Animacy::Animate);
 
@@ -47,7 +47,7 @@ impl const PartialFromStr for NounInfo {
                             GenderEx::Masculine
                         }
                     },
-                    Some(&utf8::Н) => {
+                    Some(Utf8Letter::Н) => {
                         // 'мн.', plurale tantum
                         parser.forward(2);
                         tantum = Some(Number::Plural);
@@ -72,7 +72,7 @@ impl const PartialFromStr for NounInfo {
                 }
             },
             // 'с' or 'со', neuter gender
-            Some(&utf8::С) => {
+            Some(Utf8Letter::С) => {
                 parser.forward(2);
                 if parser.skip('о') {
                     animacy = Some(Animacy::Animate);
@@ -80,7 +80,7 @@ impl const PartialFromStr for NounInfo {
                 GenderEx::Neuter
             },
             // 'ж' or 'жо', feminine gender
-            Some(&utf8::Ж) => {
+            Some(Utf8Letter::Ж) => {
                 parser.forward(2);
                 if parser.skip('о') {
                     animacy = Some(Animacy::Animate);
@@ -107,8 +107,8 @@ impl const PartialFromStr for NounInfo {
 
             // Expect unusual declension in brackets (diff gender or adjective)
             if in_brackets {
-                match parser.peek::<2>() {
-                    Some(&utf8::П) => {
+                match parser.peek_letter() {
+                    Some(Utf8Letter::П) => {
                         // Adjective declension
                         parser.forward(2);
                         kind = DeclensionKind::Adjective;
@@ -118,10 +118,10 @@ impl const PartialFromStr for NounInfo {
                         parser.forward(2);
                         kind = DeclensionKind::Noun;
 
-                        declension_gender = match *gender_char {
-                            utf8::М => Gender::Masculine,
-                            utf8::С => Gender::Neuter,
-                            utf8::Ж => Gender::Feminine,
+                        declension_gender = match gender_char {
+                            Utf8Letter::М => Gender::Masculine,
+                            Utf8Letter::С => Gender::Neuter,
+                            Utf8Letter::Ж => Gender::Feminine,
                             _ => return Err(Self::Err::InvalidGenderOrType),
                         };
                         let declension_animacy =

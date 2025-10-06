@@ -1,3 +1,5 @@
+use crate::word::Utf8Letter;
+
 pub(crate) struct UnsafeParser<'a> {
     current: &'a u8,
     end: &'a u8,
@@ -40,6 +42,12 @@ impl<'a> UnsafeParser<'a> {
     }
     pub fn peek_char(&self) -> Option<char> {
         self.remaining_str().chars().next()
+    }
+    pub const fn peek_letter(&self) -> Option<Utf8Letter> {
+        match self.peek::<2>() {
+            Some(bytes) => Utf8Letter::from_utf8(*bytes),
+            None => None,
+        }
     }
 
     pub const fn read<const N: usize>(&mut self) -> Option<&'a [u8; N]> {

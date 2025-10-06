@@ -173,10 +173,6 @@ enum_conversion! {
     else { AdjectiveStemTypeError }
 }
 
-const fn is_trim_letter(letter: Utf8Letter) -> bool {
-    use Utf8Letter::*;
-    matches!(letter, А | Е | И | Й | О | У | Ы | Ь | Э | Ю | Я | Ё)
-}
 const fn identify_stem_type(
     stem: Utf8Letter,
     after: Option<Utf8Letter>,
@@ -225,7 +221,7 @@ impl NounStemType {
 
         let (stem, stem_char, after) = {
             // If the last char is trimmable, exclude it from stem
-            if is_trim_letter(last) {
+            if last.is_stem_trim_letter() {
                 // Read the actual last stem char
                 let stem_char = Utf8Letter::split_last(word_without_last)?.1;
                 (word_without_last, stem_char, Some(last))

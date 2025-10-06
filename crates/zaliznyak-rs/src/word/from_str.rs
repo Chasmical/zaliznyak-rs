@@ -1,4 +1,4 @@
-use crate::word::{Utf8Letter, WordBuf, utf8_letters};
+use crate::word::{Utf8Letter, WordBuf};
 use thiserror::Error;
 
 #[derive(Debug, Error, Copy, Eq, Hash)]
@@ -12,7 +12,7 @@ pub enum ParseWordError {
 
 fn is_cyrillic(s: &str) -> bool {
     if let (chunks, []) = s.as_bytes().as_chunks::<2>()
-        && chunks.iter().all(|ch| utf8_letters::is_defined(*ch))
+        && chunks.iter().all(|ch| Utf8Letter::from_utf8(*ch).is_some())
     {
         true
     } else {

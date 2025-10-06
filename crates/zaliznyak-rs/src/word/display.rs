@@ -206,19 +206,17 @@ impl fmt::Debug for WordBuf {
 
 impl fmt::Display for Display<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let info = self.word.info;
-
         let add_accent = match self.accent.mode() {
             AccentMode::None => false,
-            AccentMode::Explicit => info.insert_stress_pos > 0,
+            AccentMode::Explicit => self.word.stress_at > 0,
             AccentMode::Implicit => {
                 let implicit_pos = find_implicit_insert_stress_pos(self.word.as_letters());
-                implicit_pos != Some(info.insert_stress_pos)
+                implicit_pos != Some(self.word.stress_at)
             },
         };
 
-        if add_accent && info.insert_stress_pos <= info.stem_len {
-            let (stem1, stem2) = self.word.stem_letters().split_at(info.insert_stress_pos);
+        if add_accent && self.word.stress_at <= self.word.stem_len {
+            let (stem1, stem2) = self.word.stem_letters().split_at(self.word.stress_at);
             f.write_str(stem1.as_str())?;
             f.write_char(self.accent.char())?;
             f.write_str(stem2.as_str())?;
@@ -227,12 +225,12 @@ impl fmt::Display for Display<'_> {
         }
 
         if let Some(ending_sep) = self.ending_sep
-            && info.stem_len != self.word.buf.len()
+            && self.word.stem_len != self.word.buf.len()
         {
             f.write_char(ending_sep)?;
         }
-        if add_accent && info.insert_stress_pos > info.stem_len {
-            let pos = info.insert_stress_pos - info.stem_len;
+        if add_accent && self.word.stress_at > self.word.stem_len {
+            let pos = self.word.stress_at - self.word.stem_len;
             let (ending1, ending2) = self.word.ending_letters().split_at(pos);
             f.write_str(ending1.as_str())?;
             f.write_char(self.accent.char())?;
@@ -248,30 +246,31 @@ impl fmt::Display for Display<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::word::{Utf8Letter::*, WordInfo};
+    use crate::word::Utf8Letter::*;
 
     #[test]
+    #[rustfmt::skip]
     fn fmt() {
         // Display indicates stress only if it can't be inferred automatically
         //   and uses the acute accent by default, without the ending separator.
         assert_eq!(
             format!("{}", WordBuf {
                 buf: [Я, Б, Л, О, К, О].into(),
-                info: WordInfo { stem_len: 5, insert_stress_pos: 1 },
+                stem_len: 5, stress_at: 1,
             }),
             "я́блоко",
         );
         assert_eq!(
             format!("{}", WordBuf {
                 buf: [С, Е, С, Т, Ё, Р].into(),
-                info: WordInfo { stem_len: 6, insert_stress_pos: 5 },
+                stem_len: 6, stress_at: 5,
             }),
             "сестёр",
         );
         assert_eq!(
             format!("{}", WordBuf {
                 buf: [Р, О, Д].into(),
-                info: WordInfo { stem_len: 3, insert_stress_pos: 2 },
+                stem_len: 3, stress_at: 2,
             }),
             "род",
         );
@@ -281,21 +280,21 @@ mod tests {
         assert_eq!(
             format!("{:?}", WordBuf {
                 buf: [Ш, Е, С, Т, Е, Р, Н, Я].into(),
-                info: WordInfo { stem_len: 7, insert_stress_pos: 8 },
+                stem_len: 7, stress_at: 8,
             }),
             "шестерн-я́",
         );
         assert_eq!(
             format!("{:?}", WordBuf {
                 buf: [С, Е, С, Т, Ё, Р].into(),
-                info: WordInfo { stem_len: 6, insert_stress_pos: 5 },
+                stem_len: 6, stress_at: 5,
             }),
             "сестё́р",
         );
         assert_eq!(
             format!("{:?}", WordBuf {
                 buf: [Р, О, Д].into(),
-                info: WordInfo { stem_len: 3, insert_stress_pos: 2 },
+                stem_len: 3, stress_at: 2,
             }),
             "ро́д",
         );
@@ -304,14 +303,14 @@ mod tests {
         assert_eq!(
             format!("{:#}", WordBuf {
                 buf: [Г, Р, У, Ш, А].into(),
-                info: WordInfo { stem_len: 4, insert_stress_pos: 3 },
+                stem_len: 4, stress_at: 3,
             }),
             "гру̀ша",
         );
         assert_eq!(
             format!("{:#?}", WordBuf {
                 buf: [Г, Р, У, Ш, А].into(),
-                info: WordInfo { stem_len: 4, insert_stress_pos: 3 },
+                stem_len: 4, stress_at: 3,
             }),
             "гру̀ш-а",
         );
@@ -321,14 +320,14 @@ mod tests {
         assert_eq!(
             format!("{}", WordBuf {
                 buf: [С, Ё, Р, А].into(),
-                info: WordInfo { stem_len: 3, insert_stress_pos: 4 },
+                stem_len: 3, stress_at: 4,
             }),
             "сёра́",
         );
         assert_eq!(
             format!("{:?}", WordBuf {
                 buf: [С, Ё, Р, А].into(),
-                info: WordInfo { stem_len: 3, insert_stress_pos: 4 },
+                stem_len: 3, stress_at: 4,
             }),
             "сёр-а́",
         );

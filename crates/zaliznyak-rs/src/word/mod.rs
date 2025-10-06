@@ -90,13 +90,6 @@ pub use letter::*;
 
 use crate::util::{InflectionBuf, StackVec};
 
-#[derive(Copy, Eq, Hash)]
-#[derive_const(Default, Clone, PartialEq)]
-pub(crate) struct WordInfo {
-    pub stem_len: usize,
-    pub insert_stress_pos: usize,
-}
-
 // size_of::<WordBuf>()
 //   = StackVec discriminant (2 bytes)
 //   + 15 letters (30 bytes)
@@ -125,7 +118,8 @@ const WORD_BUF_LETTERS: usize = 15;
 pub struct WordBuf {
     // Declinable parts of Russian words very rarely exceed 15 letters
     pub(super) buf: StackVec<Utf8Letter, WORD_BUF_LETTERS>,
-    pub(super) info: WordInfo,
+    pub(super) stem_len: usize,
+    pub(super) stress_at: usize,
 }
 
 /// A UTF-8-encoded lowercase cyrillic string slice.
@@ -149,7 +143,8 @@ pub struct WordBuf {
 #[derive_const(Default, Clone, PartialEq)]
 pub struct Word<'a> {
     pub(super) buf: &'a [Utf8Letter],
-    pub(super) info: WordInfo,
+    pub(super) stem_len: usize,
+    pub(super) stress_at: usize,
 }
 
 impl WordBuf {
@@ -159,7 +154,7 @@ impl WordBuf {
     }
     #[must_use]
     pub(crate) fn with_capacity(cap: usize) -> Self {
-        Self { buf: StackVec::with_capacity(cap), info: Default::default() }
+        Self { buf: StackVec::with_capacity(cap), stem_len: 0, stress_at: 0 }
     }
 
     /// Returns `true` if this `WordBuf` is empty.
@@ -175,12 +170,12 @@ impl WordBuf {
     /// Returns the word's stem as letters.
     #[must_use]
     pub const fn stem_letters(&self) -> &[Utf8Letter] {
-        unsafe { self.buf.get_unchecked(..self.info.stem_len) }
+        unsafe { self.buf.get_unchecked(..self.stem_len) }
     }
     /// Returns the word's ending as letters.
     #[must_use]
     pub const fn ending_letters(&self) -> &[Utf8Letter] {
-        unsafe { self.buf.get_unchecked(self.info.stem_len..) }
+        unsafe { self.buf.get_unchecked(self.stem_len..) }
     }
     /// Returns the word as a UTF-8-encoded string.
     #[must_use]
@@ -201,7 +196,7 @@ impl WordBuf {
     /// Returns a read-only [`Word`] slice of this `WordBuf`.
     #[must_use]
     pub const fn borrow(&self) -> Word<'_> {
-        Word { buf: &self.buf, info: self.info }
+        Word { buf: &self.buf, stem_len: self.stem_len, stress_at: self.stress_at }
     }
     /// Converts the word into a [`String`].
     #[must_use]
@@ -213,7 +208,8 @@ impl WordBuf {
         let dst = unsafe { self.buf.slice_full_capacity_mut().assume_init_mut() };
         let word = f(dst);
 
-        self.info = word.info;
+        self.stem_len = word.stem_len;
+        self.stress_at = word.stress_at;
         let len = word.buf.len();
         unsafe { self.buf.set_len(len) };
     }
@@ -221,10 +217,10 @@ impl WordBuf {
 
 impl<'a> Word<'a> {
     #[must_use]
-    pub(crate) const fn new(buf: &'a [Utf8Letter], info: WordInfo) -> Self {
-        debug_assert!(info.insert_stress_pos <= buf.len());
-        debug_assert!(info.stem_len <= buf.len());
-        Self { buf, info }
+    pub(crate) const fn new(buf: &'a [Utf8Letter], stem_len: usize, stress_at: usize) -> Self {
+        debug_assert!(stress_at <= buf.len());
+        debug_assert!(stem_len <= buf.len());
+        Self { buf, stem_len, stress_at }
     }
 
     /// Returns `true` if this `Word` is empty.
@@ -240,12 +236,12 @@ impl<'a> Word<'a> {
     /// Returns the word's stem as letters.
     #[must_use]
     pub const fn stem_letters(&self) -> &'a [Utf8Letter] {
-        unsafe { self.buf.get_unchecked(..self.info.stem_len) }
+        unsafe { self.buf.get_unchecked(..self.stem_len) }
     }
     /// Returns the word's ending as letters.
     #[must_use]
     pub const fn ending_letters(&self) -> &'a [Utf8Letter] {
-        unsafe { self.buf.get_unchecked(self.info.stem_len..) }
+        unsafe { self.buf.get_unchecked(self.stem_len..) }
     }
     /// Returns the word as a UTF-8-encoded string.
     #[must_use]
@@ -266,7 +262,7 @@ impl<'a> Word<'a> {
     /// Creates an owned [`WordBuf`] from this word slice.
     #[must_use]
     pub fn to_owned(&self) -> WordBuf {
-        WordBuf { buf: self.buf.into(), info: self.info }
+        WordBuf { buf: self.buf.into(), stem_len: self.stem_len, stress_at: self.stress_at }
     }
 }
 
@@ -274,6 +270,6 @@ impl<'a> Word<'a> {
 impl<'a> const From<InflectionBuf<'a>> for Word<'a> {
     fn from(value: InflectionBuf<'a>) -> Self {
         let stem_len = value.stem_len / 2;
-        Self::new(value.finish(), WordInfo { stem_len, insert_stress_pos: 0 })
+        Self::new(value.finish(), stem_len, 0)
     }
 }

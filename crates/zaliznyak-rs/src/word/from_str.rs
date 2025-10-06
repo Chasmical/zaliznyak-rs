@@ -71,9 +71,9 @@ impl std::str::FromStr for WordBuf {
             dst.copy_from_slice(s.as_bytes());
             word.buf.set_len(char_len);
         }
-        word.info.stem_len = stem_len.unwrap_or(char_len);
+        word.stem_len = stem_len.unwrap_or(char_len);
 
-        word.info.insert_stress_pos = stress_pos
+        word.stress_at = stress_pos
             .or_else(|| find_implicit_insert_stress_pos(word.as_letters()))
             .ok_or(ParseWordError::NoStress)?;
 
@@ -84,30 +84,31 @@ impl std::str::FromStr for WordBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::word::{Utf8Letter::*, WordInfo};
+    use crate::word::Utf8Letter::*;
 
     #[test]
+    #[rustfmt::skip]
     fn from_str() {
         // Explicit stress and explicit ending
         assert_eq!(
             "я́блок-о".parse(),
             Ok(WordBuf {
                 buf: [Я, Б, Л, О, К, О].into(),
-                info: WordInfo { stem_len: 5, insert_stress_pos: 1 },
+                stem_len: 5, stress_at: 1,
             }),
         );
         assert_eq!(
             "гру̀ш-а".parse(),
             Ok(WordBuf {
                 buf: [Г, Р, У, Ш, А].into(),
-                info: WordInfo { stem_len: 4, insert_stress_pos: 3 },
+                stem_len: 4, stress_at: 3,
             }),
         );
         assert_eq!(
             "шестерн-я'".parse(),
             Ok(WordBuf {
                 buf: [Ш, Е, С, Т, Е, Р, Н, Я].into(),
-                info: WordInfo { stem_len: 7, insert_stress_pos: 8 },
+                stem_len: 7, stress_at: 8,
             }),
         );
 
@@ -116,14 +117,14 @@ mod tests {
             "род".parse(),
             Ok(WordBuf {
                 buf: [Р, О, Д].into(),
-                info: WordInfo { stem_len: 3, insert_stress_pos: 2 },
+                stem_len: 3, stress_at: 2,
             }),
         );
         assert_eq!(
             "рж-и".parse(),
             Ok(WordBuf {
                 buf: [Р, Ж, И].into(),
-                info: WordInfo { stem_len: 2, insert_stress_pos: 3 },
+                stem_len: 2, stress_at: 3,
             }),
         );
 
@@ -132,14 +133,14 @@ mod tests {
             "сестёр".parse(),
             Ok(WordBuf {
                 buf: [С, Е, С, Т, Ё, Р].into(),
-                info: WordInfo { stem_len: 6, insert_stress_pos: 5 },
+                stem_len: 6, stress_at: 5,
             }),
         );
         assert_eq!(
             "сёр-а́".parse(),
             Ok(WordBuf {
                 buf: [С, Ё, Р, А].into(),
-                info: WordInfo { stem_len: 3, insert_stress_pos: 4 },
+                stem_len: 3, stress_at: 4,
             }),
         );
     }

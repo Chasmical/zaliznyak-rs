@@ -155,16 +155,11 @@ enum LetterLastByte {
 pub const trait Utf8LetterSlice {
     #[must_use]
     fn as_str(&self) -> &str;
-    #[must_use]
-    fn as_mut_str(&mut self) -> &mut str;
 }
 
 impl const Utf8LetterSlice for [Utf8Letter] {
     fn as_str(&self) -> &str {
         unsafe { std::str::from_raw_parts(self.as_ptr().cast(), self.len() * 2) }
-    }
-    fn as_mut_str(&mut self) -> &mut str {
-        unsafe { std::str::from_raw_parts_mut(self.as_mut_ptr().cast(), self.len() * 2) }
     }
 }
 

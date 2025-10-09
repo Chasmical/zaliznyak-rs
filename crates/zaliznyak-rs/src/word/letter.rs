@@ -28,9 +28,11 @@ pub enum Utf8Letter {
     #[doc(hidden)] Ё = d('ё'),
 }
 
+// TODO: Replace transmute with from_ne_bytes, when LSP/IDE fixes constants in pop-up window
 #[allow(unnecessary_transmutes, reason = "u16::from_ne_bytes breaks constants in pop-up window")]
 const fn d(ch: char) -> u16 {
     assert!(matches!(ch, 'а'..='я' | 'ё'));
+    // SAFETY: This function is only used by the enum above, for 'а'..='я' | 'ё' only.
     unsafe { std::mem::transmute(encode_utf8_2(ch as u16)) }
 }
 
@@ -64,6 +66,7 @@ impl Utf8Letter {
     #[must_use]
     pub const fn from_utf8(utf8: [u8; 2]) -> Option<Self> {
         if is_lowercase_cyrillic(utf8) {
+            // SAFETY: Just checked that the value is valid.
             Some(unsafe { Self::from_utf8_unchecked(utf8) })
         } else {
             None
@@ -90,6 +93,7 @@ impl Utf8Letter {
     #[must_use]
     pub const unsafe fn from_utf8_unchecked(utf8: [u8; 2]) -> Self {
         debug_assert!(is_lowercase_cyrillic(utf8));
+        // SAFETY: The caller must uphold the safety contract.
         unsafe { std::mem::transmute(utf8) }
     }
 
@@ -111,6 +115,7 @@ impl Utf8Letter {
     #[must_use]
     pub const fn from_char(ch: char) -> Option<Self> {
         if matches!(ch, 'а'..='я' | 'ё') {
+            // SAFETY: Just checked that the value is valid.
             Some(unsafe { Self::from_char_unchecked(ch) })
         } else {
             None
@@ -137,6 +142,7 @@ impl Utf8Letter {
     #[must_use]
     pub const unsafe fn from_char_unchecked(ch: char) -> Self {
         debug_assert!(matches!(ch, 'а'..='я' | 'ё'));
+        // SAFETY: The caller must uphold the safety contract.
         unsafe { Self::from_utf8_unchecked(encode_utf8_2(ch as u16)) }
     }
 
@@ -153,6 +159,7 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const fn to_utf8(self) -> [u8; 2] {
+        // SAFETY: Utf8Letter is always valid UTF-8.
         unsafe { std::mem::transmute(self) }
     }
     /// Returns a reference to this letter's UTF-8 bytes.
@@ -168,6 +175,7 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const fn as_utf8(&self) -> &[u8; 2] {
+        // SAFETY: Utf8Letter is always valid UTF-8.
         unsafe { std::mem::transmute(self) }
     }
     /// Returns a reference to this letter's UTF-8 bytes as a string.
@@ -183,6 +191,7 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const fn as_str(&self) -> &str {
+        // SAFETY: Utf8Letter is always valid UTF-8.
         unsafe { str::from_utf8_unchecked(self.as_utf8()) }
     }
 
@@ -199,11 +208,13 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const fn to_char(self) -> char {
+        // SAFETY: Utf8Letter can always be safely decoded to a scalar Unicode value.
         unsafe { char::from_u32_unchecked(decode_utf8_2(self.to_utf8()) as u32) }
     }
 
     #[must_use]
     const fn last_byte(self) -> LetterLastByte {
+        // SAFETY: LetterLastByte covers every possible last byte value.
         unsafe { std::mem::transmute(self.to_utf8()[1]) }
     }
 
@@ -253,6 +264,7 @@ impl Utf8Letter {
         if let Some((remaining, last)) = s.as_bytes().split_last_chunk::<2>()
             && let Some(last) = Self::from_utf8(*last)
         {
+            // SAFETY: The split off letter is always a valid UTF-8 char boundary.
             return Some((unsafe { str::from_utf8_unchecked(remaining) }, last));
         }
         None
@@ -313,6 +325,7 @@ pub const trait Utf8LetterSlice: private::Sealed {
 impl private::Sealed for [Utf8Letter] {}
 impl const Utf8LetterSlice for [Utf8Letter] {
     fn as_str(&self) -> &str {
+        // SAFETY: Utf8Letters represent 2-byte UTF-8 chunks, and can be safely cast to UTF-8.
         unsafe { std::str::from_raw_parts(self.as_ptr().cast(), self.len() * 2) }
     }
 }

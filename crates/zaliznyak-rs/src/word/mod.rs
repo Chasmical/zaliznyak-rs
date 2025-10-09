@@ -90,11 +90,42 @@ pub use letter::*;
 
 use crate::util::{InflectionBuf, StackVec};
 
-// size_of::<WordBuf>()
-//   = StackVec discriminant (2 bytes)
-//   + 15 letters (30 bytes)
-//   + len & info (3 usizes)
-//   = 56 bytes (64x) or 44 bytes (32x)
+/// Max amount of letters that can be stored in [`WordBuf`] on the stack.
+///
+/// # Stack vs. Heap
+///
+/// Vec = ptr+len+cap. Length is required either way, so, excluding length, Vec's size is 2 usizes.
+///
+/// | Letters | bytes     | 64x      | 32x      |
+/// |---------|-----------|----------|----------|
+/// | 7       | 16=14+2   | 2  (+0)  | 4  (+2)  |
+/// | 11      | 24=22+2   | 3  (+1)  | 6  (+4)  |
+/// | 15      | 32=30+2   | 4  (+2)  | 8  (+6)  |
+/// | 19      | 40=38+2   | 5  (+3)  | 10 (+8)  |
+/// | 23      | 48=46+2   | 6  (+4)  | 12 (+10) |
+/// | 27      | 56=54+2   | 7  (+5)  | 14 (+12) |
+///
+/// And here's a quick analysis of the words' stems in Zaliznyak's dictionary:
+///
+/// | Stem length | Words | Coverage |
+/// |------------:|------:|---------:|
+/// | ≤ 4 letters |  4821 |     7.2% |
+/// | ≤ 5 letters | 10799 |    16.1% |
+/// | ≤ 6 letters | 19861 |    29.7% |
+/// | ≤ 7 letters | 29894 |    44.7% |
+/// | ≤ 8 letters | 40136 |    60.0% |
+/// | ≤ 9 letters | 48765 |    72.8% |
+/// | ≤10 letters | 55304 |    82.6% |
+/// | ≤14 letters | 65763 |    98.2% |
+/// | ≤18 letters | 66910 |    99.9% |
+/// | ≤22 letters | 66947 |   100.0% |
+///
+/// TODO: recalc the table later with a more accurate method (above was done with regexes).
+///
+/// Allocating a 15-letter stack buffer allows for on-stack declension of 10-letter stems, covering
+/// 82.6% of all the words in Zaliznyak's dictionary. Considering that most words that are longer
+/// than 10 letters are either extremely specific or rare, the 82.6% percentage is actually more
+/// than enough for general-purpose declension.
 const WORD_BUF_LETTERS: usize = 15;
 
 /// A UTF-8-encoded lowercase cyrillic string.
@@ -170,11 +201,13 @@ impl WordBuf {
     /// Returns the word's stem as letters.
     #[must_use]
     pub const fn stem_letters(&self) -> &[Utf8Letter] {
+        // SAFETY: stem_len is always within valid range.
         unsafe { self.buf.get_unchecked(..self.stem_len) }
     }
     /// Returns the word's ending as letters.
     #[must_use]
     pub const fn ending_letters(&self) -> &[Utf8Letter] {
+        // SAFETY: stem_len is always within valid range.
         unsafe { self.buf.get_unchecked(self.stem_len..) }
     }
     /// Returns the word as a UTF-8-encoded string.
@@ -204,6 +237,7 @@ impl WordBuf {
         self.buf.into_string()
     }
 
+    // TODO: mark unsafe, since it could potentially access uninit letters?
     pub(crate) const fn inflect<F: [const] FnOnce(&mut [Utf8Letter]) -> Word<'_>>(&mut self, f: F) {
         let dst = unsafe { self.buf.slice_full_capacity_mut().assume_init_mut() };
         let word = f(dst);
@@ -236,11 +270,13 @@ impl<'a> Word<'a> {
     /// Returns the word's stem as letters.
     #[must_use]
     pub const fn stem_letters(&self) -> &'a [Utf8Letter] {
+        // SAFETY: stem_len is always within valid range.
         unsafe { self.buf.get_unchecked(..self.stem_len) }
     }
     /// Returns the word's ending as letters.
     #[must_use]
     pub const fn ending_letters(&self) -> &'a [Utf8Letter] {
+        // SAFETY: stem_len is always within valid range.
         unsafe { self.buf.get_unchecked(self.stem_len..) }
     }
     /// Returns the word as a UTF-8-encoded string.

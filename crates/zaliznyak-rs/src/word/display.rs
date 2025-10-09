@@ -2,13 +2,18 @@ use crate::word::{Utf8LetterSlice, Word, WordBuf, find_implicit_insert_stress_po
 use std::fmt::{self, Write};
 
 /// Accent display info, storing [`AccentMode`] and the accent [`char`].
+// TODO: implement a better Debug
 #[derive(Debug, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
+// Data structure:
+//   0x FFFFFF 00 - accent (char)
+//   0x 000000 FF - mode (AccentMode)
 pub struct Accent(u32);
 
 /// Accent display mode.
 #[derive(Debug, Copy, Eq, Hash)]
 #[derive_const(Default, Clone, PartialEq)]
+#[repr(u8)]
 pub enum AccentMode {
     /// Don't output the stress.
     #[default]
@@ -65,11 +70,13 @@ impl Accent {
     /// Returns the accent's mode.
     #[must_use]
     pub const fn mode(&self) -> AccentMode {
+        // SAFETY: The mode value occupies the least significant byte.
         unsafe { std::mem::transmute(self.0 as u8) }
     }
     /// Returns the accent's char. Returns `'\0'` if the mode is [`AccentMode::None`].
     #[must_use]
     pub const fn char(&self) -> char {
+        // SAFETY: The char value occupies the 3 most significant bytes.
         unsafe { char::from_u32_unchecked(self.0 >> 8) }
     }
 }

@@ -66,6 +66,7 @@ impl std::str::FromStr for WordBuf {
         let char_len = s.len() / 2;
         let mut word = Self::with_capacity(char_len);
 
+        // SAFETY: The allocated buffer is guaranteed to have enough capacity to copy into.
         unsafe {
             let dst = std::slice::from_raw_parts_mut(word.buf.as_mut_ptr().cast(), s.len());
             dst.copy_from_slice(s.as_bytes());

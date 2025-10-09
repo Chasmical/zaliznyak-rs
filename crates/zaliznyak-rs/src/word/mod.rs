@@ -266,6 +266,28 @@ impl<'a> Word<'a> {
     }
 }
 
+impl const AsRef<[Utf8Letter]> for WordBuf {
+    fn as_ref(&self) -> &[Utf8Letter] {
+        self.as_letters()
+    }
+}
+impl const AsRef<[Utf8Letter]> for Word<'_> {
+    fn as_ref(&self) -> &[Utf8Letter] {
+        self.as_letters()
+    }
+}
+
+impl const AsRef<str> for WordBuf {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+impl const AsRef<str> for Word<'_> {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 // TODO: refactor to pass stress_pos
 impl<'a> const From<InflectionBuf<'a>> for Word<'a> {
     fn from(value: InflectionBuf<'a>) -> Self {

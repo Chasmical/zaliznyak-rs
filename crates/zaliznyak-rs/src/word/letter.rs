@@ -259,6 +259,17 @@ impl Utf8Letter {
     }
 }
 
+impl const AsRef<str> for Utf8Letter {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+impl const AsRef<[u8]> for Utf8Letter {
+    fn as_ref(&self) -> &[u8] {
+        self.as_utf8()
+    }
+}
+
 // All the lowercase cyrillic letters' last UTF-8 bytes are distinct, meaning it's possible to
 // match letters using the last byte only, making mass matches significantly more performant.
 // TODO: This should be exposed in more places. It'd be very useful in parsing.

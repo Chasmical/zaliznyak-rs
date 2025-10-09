@@ -167,8 +167,8 @@ impl AdjectiveDeclension {
         // In case of к/г/х, the stress falls on the last stem syllable.
         // If there's a 'ё' in non-last stem vowel position, unstress it into 'е'.
         if let Some(yo) = buf.stem_mut().iter_mut().find(|x| **x == Utf8Letter::Ё) {
-            // Extend yo's lifetime, to allow accessing stem() and then setting yo
-            let yo = unsafe { std::mem::transmute::<&mut Utf8Letter, &mut Utf8Letter>(yo) };
+            // SAFETY: The InflectionBuf isn't modified between here and the assignment of yo.
+            let yo = unsafe { &mut *&raw mut *yo };
 
             let last_vowel = buf.stem().iter().rfind(|x| x.is_vowel()).unwrap();
 
@@ -195,8 +195,8 @@ impl AdjectiveDeclension {
             let Some(ye) = stem.iter_mut().rfind(|x| **x == Utf8Letter::Е) else {
                 todo!("Handle absence of 'е' in the stem?")
             };
-            // Extend ye's lifetime, to allow accessing stem() and then setting ye
-            let ye = unsafe { std::mem::transmute::<&mut Utf8Letter, &mut Utf8Letter>(ye) };
+            // SAFETY: The InflectionBuf isn't modified between here and the assignment of ye.
+            let ye = unsafe { &mut *&raw mut *ye };
 
             let stress_into_yo = {
                 if !ending.iter().any(|x| x.is_vowel()) {
@@ -204,7 +204,7 @@ impl AdjectiveDeclension {
                     true
                 } else {
                     // TODO: check if this 'first vowel' check is relevant for adjectives
-                    let first_vowel = buf.stem().iter().find(|x| x.is_vowel());
+                    let first_vowel = stem.iter().find(|x| x.is_vowel());
 
                     first_vowel.is_some_and(|x| std::ptr::eq(ye, x))
                         && self.stress.full.is_stem_stressed()

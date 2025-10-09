@@ -226,13 +226,11 @@ impl NounDeclension {
     fn apply_vowel_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
         use Utf8Letter::*;
 
-        let stem = buf.stem_mut();
-        // Extend stem's lifetime, to allow accessing ending() and then setting stem chars
-        let stem = unsafe { std::mem::transmute::<&mut [Utf8Letter], &mut [Utf8Letter]>(stem) };
-
         if info.gender == Gender::Masculine
             || info.gender == Gender::Feminine && self.stem_type == NounStemType::Type8
         {
+            let stem = buf.stem_mut();
+
             // Vowel alternation type A (masc any / fem 8*)
 
             if info.is_singular() {
@@ -252,8 +250,8 @@ impl NounDeclension {
             };
             let (vowel_index, vowel) = found;
 
-            // Extend vowel's lifetime, to allow accessing stem() and then setting vowel
-            let vowel = unsafe { std::mem::transmute::<&mut Utf8Letter, &mut Utf8Letter>(vowel) };
+            // SAFETY: The InflectionBuf isn't modified between here and the assignment of vowel.
+            let vowel = unsafe { &mut *&raw mut *vowel };
 
             match vowel {
                 О => {
@@ -311,7 +309,7 @@ impl NounDeclension {
             // 1) stem type 6: stem's ending 'ь' is replaced with 'е' or 'и'.
             // E.g. лгунья (ж 6*a) - Р.мн. лгуний; статья (ж 6*b) - Р.мн. статей.
             if self.stem_type == NounStemType::Type6 {
-                if let [.., last @ Ь] = stem {
+                if let [.., last @ Ь] = buf.stem_mut() {
                     let ending_stressed = self.stress.is_ending_stressed(info);
                     *last = if ending_stressed { Е } else { И };
                 }
@@ -323,8 +321,8 @@ impl NounDeclension {
             // E.g. вафля (2*a) - Р.мн. вафель; башня (2*a) - Р.мн. башен, not башень.
             // Note: only stem type 2*a nouns can have 'ь' as ending here.
             // (see declension::endings_tables::NOUN_LOOKUP, 'gen pl' section)
-            if let [Ь] = buf.ending()
-                && let [.., Н] = stem
+            if buf.ending().len() == 1
+                && let [.., Н, Ь] = buf.as_slice()
             {
                 buf.replace_ending("");
             }
@@ -332,6 +330,7 @@ impl NounDeclension {
             // At this point, stem type is in range 1..=5 (consonant-ending stems).
             // Stem type 6 was completely handled earlier, and 7* nouns don't exist.
             // So, it's safe to assume that the last stem char is a consonant.
+            let stem = buf.stem_mut();
             let last = stem.last().copied();
             let pre_last = stem.get_mut(stem.len() - 2);
 
@@ -387,8 +386,8 @@ impl NounDeclension {
             let Some(ye) = stem.iter_mut().rfind(|x| **x == Utf8Letter::Е) else {
                 todo!("Handle absence of 'е' in the stem?")
             };
-            // Extend ye's lifetime, to allow accessing stem() and then setting ye
-            let ye = unsafe { std::mem::transmute::<&mut Utf8Letter, &mut Utf8Letter>(ye) };
+            // SAFETY: The InflectionBuf isn't modified between here and the assignment of ye.
+            let ye = unsafe { &mut *&raw mut *ye };
 
             let stress_into_yo = {
                 if ending.iter().any(|x| x.is_vowel()) {
@@ -399,7 +398,7 @@ impl NounDeclension {
                         //   can receive stress only if it's the only vowel in the stem.
                         // E.g. железа (1f, ё) - И.мн. железы; середа (1f′, ё) - В.ед. середу;
                         //       слеза (1f, ё) - И.мн. слёзы;    щека (3f′, ё) - В.ед. щёку.
-                        let first_vowel = buf.stem().iter().find(|x| x.is_vowel());
+                        let first_vowel = stem.iter().find(|x| x.is_vowel());
 
                         first_vowel.is_some_and(|x| std::ptr::eq(ye, x))
                             && self.stress.is_stem_stressed(info)

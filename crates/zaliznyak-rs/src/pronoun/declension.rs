@@ -68,8 +68,8 @@ impl PronounDeclension {
         };
         let (vowel_index, vowel) = found;
 
-        // Extend vowel's lifetime, to allow accessing stem() and then setting vowel
-        let vowel = unsafe { std::mem::transmute::<&mut Utf8Letter, &mut Utf8Letter>(vowel) };
+        // SAFETY: The InflectionBuf isn't modified between here and the assignment of vowel.
+        let vowel = unsafe { &mut *&raw mut *vowel };
 
         match vowel {
             Utf8Letter::О => {

@@ -4,6 +4,7 @@ use crate::{
         AdjectiveDeclension, NounDeclension, NounStemType, PronounDeclension, PronounStemType,
         endings_tables::{ADJECTIVE_LOOKUP, Endings, NOUN_LOOKUP, PRONOUN_LOOKUP},
     },
+    word::Utf8LetterSlice,
 };
 
 impl NounDeclension {
@@ -58,7 +59,7 @@ impl NounDeclension {
         // Check if stress affects the choice of the ending, and return appropriate ending
         let is_stressed = endings.invariant() || self.stress.is_ending_stressed(info);
 
-        endings.get(is_stressed)
+        endings.get(is_stressed).as_str()
     }
 
     const fn lookup_endings(self, info: DeclInfo) -> Endings {
@@ -109,7 +110,7 @@ impl PronounDeclension {
         // Check if stress affects the choice of the ending, and return appropriate ending
         let stressed = endings.invariant() || self.stress.is_ending_stressed(info);
 
-        endings.get(stressed)
+        endings.get(stressed).as_str()
     }
 
     const fn lookup_endings(self, info: DeclInfo) -> Endings {
@@ -170,7 +171,7 @@ impl AdjectiveDeclension {
         // Check if stress affects the choice of the ending, and return appropriate ending
         let stressed = endings.invariant() || self.stress.full.is_ending_stressed();
 
-        endings.get(stressed)
+        endings.get(stressed).as_str()
     }
 
     /// Returns an adjective short form ending according to this declension and info.
@@ -198,7 +199,7 @@ impl AdjectiveDeclension {
         let stressed = endings.invariant()
             || self.stress.short.is_ending_stressed(info.number, info.gender).unwrap_or(true);
 
-        endings.get(stressed)
+        endings.get(stressed).as_str()
     }
 
     const fn lookup_endings(self, info: DeclInfo, case_form: u8) -> Endings {

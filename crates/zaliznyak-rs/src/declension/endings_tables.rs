@@ -1,8 +1,15 @@
 #![allow(non_upper_case_globals)]
-use crate::util::slice_find;
+use crate::{util::slice_find, word::Utf8Letter};
 
-// All endings of nouns, pronouns and adjectives in one 54-char slice
-const ENDINGS: &[u8] = "аямимиееговымихемуюьююыевяяхамийогойоейомуыхыйёвахёйём".as_bytes();
+mod endings {
+    use crate::word::Utf8Letter::{self, *};
+
+    // All endings of nouns, pronouns and adjectives in one 54-char slice
+    #[rustfmt::skip]
+    pub const ENDINGS: [Utf8Letter; 54] = [
+        А,Я,М,И,М,И,Е,Е,Г,О,В,Ы,М,И,Х,Е,М,У,Ю,Ь,Ю,Ю,Ы,Е,В,Я,Я,Х,А,М,И,Й,О,Г,О,Й,О,Е,Й,О,М,У,Ы,Х,Ы,Й,Ё,В,А,Х,Ё,Й,Ё,М,
+    ];
+}
 
 // [case:6] [number:2] [gender:3] [stem type:8] = [total:288]
 #[rustfmt::skip]
@@ -181,22 +188,24 @@ impl Endings {
         //   11_xxxxxx - length   (in increments of 2 bytes; UTF-16)
         //   xx_111111 - position (in increments of 2 bytes; UTF-16)
 
-        let start = slice_find(ENDINGS, s.as_bytes()).unwrap();
-        let encoded = (((s.len() >> 1) << 6) | (start >> 1)) as u8;
+        let mut letters = [Utf8Letter::А; 3];
+        unsafe { std::ptr::copy_nonoverlapping(s.as_ptr(), letters.as_mut_ptr().cast(), s.len()) };
+        let letters = &letters[..s.len() / 2];
+
+        let start = slice_find(&endings::ENDINGS, letters).unwrap();
+        let encoded = ((letters.len() << 6) | start) as u8;
         Self(encoded, encoded)
     }
 
     // FIXME(const-hack): use const closure here instead for determining stress
-    pub const fn get(self, is_stressed: bool) -> &'static str {
+    pub const fn get(self, is_stressed: bool) -> &'static [Utf8Letter] {
         // Ensure that the accusative case is handled properly by outside code
         debug_assert!(!self.is_acc());
 
-        unsafe {
-            let index = if is_stressed { self.1 } else { self.0 };
-            let start = ENDINGS.as_ptr().add(((index & 0x3F) << 1) as usize);
-            let len = ((index >> 5) & 0b110) as usize;
-            str::from_utf8_unchecked(std::slice::from_raw_parts(start, len))
-        }
+        let index = if is_stressed { self.1 } else { self.0 };
+        let start = (index & 0x3F) as usize;
+        let len = (index >> 6) as usize;
+        unsafe { endings::ENDINGS.get_unchecked(start..start + len) }
     }
 }
 

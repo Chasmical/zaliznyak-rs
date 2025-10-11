@@ -11,6 +11,7 @@ macro_rules! impl_stem_type {
         $(#[$outer])*
         #[derive(Debug, Copy, Eq, Hash)]
         #[derive_const(Clone, PartialEq)]
+        #[allow(missing_docs)]
         $vis enum $T {
             $( $(#[$inner])* $variant,)+
         }
@@ -75,9 +76,7 @@ macro_rules! impl_stem_type {
         }
         impl std::fmt::Display for $T {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                let ascii_digit = self.to_ascii_digit();
-                let slice = std::slice::from_ref(&ascii_digit);
-                unsafe { str::from_utf8_unchecked(slice) }.fmt(f)
+                std::fmt::Write::write_char(f, self.to_ascii_digit() as char)
             }
         }
         impl const std::str::FromStr for $T {

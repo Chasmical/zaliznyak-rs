@@ -23,6 +23,7 @@
 #![feature(maybe_uninit_uninit_array_transpose)]
 #![cfg_attr(test, feature(test))]
 #![allow(internal_features, confusable_idents)]
+#![allow(clippy::deref_addrof)]
 
 pub mod adjective;
 pub mod categories;

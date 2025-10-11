@@ -229,8 +229,6 @@ abbr_display_impls! { CaseEx, Case, GenderEx, Gender, Animacy, Number, Tense }
 
 impl std::fmt::Display for Person {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let ascii_digit = self.to_ascii_digit();
-        let slice = std::slice::from_ref(&ascii_digit);
-        unsafe { str::from_utf8_unchecked(slice) }.fmt(f)
+        std::fmt::Write::write_char(f, self.to_ascii_digit() as char)
     }
 }

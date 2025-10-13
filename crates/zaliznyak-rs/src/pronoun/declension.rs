@@ -3,7 +3,7 @@ use crate::{
     declension::{Declension, PronounDeclension},
     pronoun::{Pronoun, PronounInfo},
     util::InflectionBuf,
-    word::{Utf8Letter, Word, WordBuf},
+    word::{Utf8Letter, Utf8LetterSlice, Word, WordBuf},
 };
 
 impl Pronoun {
@@ -45,7 +45,7 @@ impl PronounInfo {
 
 impl PronounDeclension {
     pub(crate) fn inflect(self, info: DeclInfo, buf: &mut InflectionBuf) {
-        buf.append_to_ending(self.find_ending(info));
+        buf.append_to_ending(self.find_ending(info).as_str());
 
         if self.flags.has_star() {
             self.apply_vowel_alternation(info, buf);

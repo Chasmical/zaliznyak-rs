@@ -4,7 +4,7 @@ use crate::{
     declension::{AdjectiveDeclension, Declension},
     stress::AdjectiveStress,
     util::InflectionBuf,
-    word::{Utf8Letter, Word, WordBuf},
+    word::{Utf8Letter, Utf8LetterSlice, Word, WordBuf},
 };
 
 impl Adjective {
@@ -113,7 +113,7 @@ impl AdjectiveInfo {
 
 impl AdjectiveDeclension {
     pub(crate) fn inflect(self, info: DeclInfo, buf: &mut InflectionBuf) {
-        buf.append_to_ending(self.find_ending(info));
+        buf.append_to_ending(self.find_ending(info).as_str());
 
         if self.flags.has_alternating_yo() {
             self.apply_ye_yo_alternation(buf);
@@ -121,7 +121,7 @@ impl AdjectiveDeclension {
     }
 
     pub(crate) fn inflect_short(self, info: DeclInfo, buf: &mut InflectionBuf) {
-        buf.append_to_ending(self.find_ending_short(info));
+        buf.append_to_ending(self.find_ending_short(info).as_str());
 
         // If declension has (1) or (2), remove the redundant 'н' in short form
         if self.flags.has_circled_two()

@@ -4,7 +4,7 @@ use crate::{
     noun::{Noun, NounInfo},
     stress::NounStress,
     util::InflectionBuf,
-    word::{Utf8Letter, Word, WordBuf},
+    word::{Utf8Letter, Utf8LetterSlice, Word, WordBuf},
 };
 
 impl Noun {
@@ -58,7 +58,7 @@ impl NounInfo {
 
 impl NounDeclension {
     pub(crate) fn inflect(self, info: DeclInfo, buf: &mut InflectionBuf) {
-        buf.append_to_ending(self.find_ending(info));
+        buf.append_to_ending(self.find_ending(info).as_str());
 
         if self.flags.has_circle() {
             self.apply_unique_alternation(info, buf);

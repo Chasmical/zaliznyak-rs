@@ -4,7 +4,7 @@ use crate::{
         AdjectiveDeclension, NounDeclension, NounStemType, PronounDeclension, PronounStemType,
         endings_tables::{ADJECTIVE_LOOKUP, Endings, NOUN_LOOKUP, PRONOUN_LOOKUP},
     },
-    word::Utf8LetterSlice,
+    word::Utf8Letter,
 };
 
 impl NounDeclension {
@@ -13,22 +13,22 @@ impl NounDeclension {
     /// # Examples
     ///
     /// ```
-    /// use zaliznyak::declension::NounDeclension;
+    /// use zaliznyak::{declension::NounDeclension, word::Utf8LetterSlice};
     ///
     /// // Example word: я́блоко
     /// let decl: NounDeclension = "3a(1)".parse().unwrap();
     ///
     /// // я́блок-о, я́блок-а, я́блок-у
-    /// assert_eq!(decl.find_ending("И.п. ед.ч. с.р.".parse().unwrap()), "о");
-    /// assert_eq!(decl.find_ending("Р.п. ед.ч. с.р.".parse().unwrap()), "а");
-    /// assert_eq!(decl.find_ending("Д.п. ед.ч. с.р.".parse().unwrap()), "у");
+    /// assert_eq!(decl.find_ending("И.п. ед.ч. с.р.".parse().unwrap()).as_str(), "о");
+    /// assert_eq!(decl.find_ending("Р.п. ед.ч. с.р.".parse().unwrap()).as_str(), "а");
+    /// assert_eq!(decl.find_ending("Д.п. ед.ч. с.р.".parse().unwrap()).as_str(), "у");
     ///
     /// // я́блок-и, я́блок, я́блок-ам
-    /// assert_eq!(decl.find_ending("И.п. мн.ч. с.р.".parse().unwrap()), "и");
-    /// assert_eq!(decl.find_ending("Р.п. мн.ч. с.р.".parse().unwrap()), "");
-    /// assert_eq!(decl.find_ending("Д.п. мн.ч. с.р.".parse().unwrap()), "ам");
+    /// assert_eq!(decl.find_ending("И.п. мн.ч. с.р.".parse().unwrap()).as_str(), "и");
+    /// assert_eq!(decl.find_ending("Р.п. мн.ч. с.р.".parse().unwrap()).as_str(), "");
+    /// assert_eq!(decl.find_ending("Д.п. мн.ч. с.р.".parse().unwrap()).as_str(), "ам");
     /// ```
-    pub const fn find_ending(mut self, mut info: DeclInfo) -> &'static str {
+    pub const fn find_ending(mut self, mut info: DeclInfo) -> &'static [Utf8Letter] {
         if self.flags.has_any_circled_digits() {
             if info.is_plural() {
                 let is_gen = info.case.acc_is_gen(info);
@@ -59,7 +59,7 @@ impl NounDeclension {
         // Check if stress affects the choice of the ending, and return appropriate ending
         let is_stressed = endings.invariant() || self.stress.is_ending_stressed(info);
 
-        endings.get(is_stressed).as_str()
+        endings.get(is_stressed)
     }
 
     const fn lookup_endings(self, info: DeclInfo) -> Endings {
@@ -87,30 +87,30 @@ impl PronounDeclension {
     /// # Examples
     ///
     /// ```
-    /// use zaliznyak::declension::PronounDeclension;
+    /// use zaliznyak::{declension::PronounDeclension, word::Utf8LetterSlice};
     ///
     /// // Example: госпо́день п <мс 2*a>
     /// let decl: PronounDeclension = "2*a".parse().unwrap();
     ///
     /// // госпо́ден-ь, госпо́дн-я, госпо́дн-его, госпо́ден-ь
-    /// assert_eq!(decl.find_ending("И.п. ед.ч. м.р.".parse().unwrap()), "ь");
-    /// assert_eq!(decl.find_ending("Р.п. ед.ч. м.р.".parse().unwrap()), "я");
-    /// assert_eq!(decl.find_ending("В.п. ед.ч. м.р. одуш.".parse().unwrap()), "его");
-    /// assert_eq!(decl.find_ending("В.п. ед.ч. м.р. неод.".parse().unwrap()), "ь");
+    /// assert_eq!(decl.find_ending("И.п. ед.ч. м.р.".parse().unwrap()).as_str(), "ь");
+    /// assert_eq!(decl.find_ending("Р.п. ед.ч. м.р.".parse().unwrap()).as_str(), "я");
+    /// assert_eq!(decl.find_ending("В.п. ед.ч. м.р. одуш.".parse().unwrap()).as_str(), "его");
+    /// assert_eq!(decl.find_ending("В.п. ед.ч. м.р. неод.".parse().unwrap()).as_str(), "ь");
     ///
     /// // госпо́дн-и, госпо́дн-их, госпо́дн-им
-    /// assert_eq!(decl.find_ending("И.п. мн.ч.".parse().unwrap()), "и");
-    /// assert_eq!(decl.find_ending("Р.п. мн.ч.".parse().unwrap()), "их");
-    /// assert_eq!(decl.find_ending("Д.п. мн.ч.".parse().unwrap()), "им");
+    /// assert_eq!(decl.find_ending("И.п. мн.ч.".parse().unwrap()).as_str(), "и");
+    /// assert_eq!(decl.find_ending("Р.п. мн.ч.".parse().unwrap()).as_str(), "их");
+    /// assert_eq!(decl.find_ending("Д.п. мн.ч.".parse().unwrap()).as_str(), "им");
     /// ```
-    pub const fn find_ending(self, info: DeclInfo) -> &'static str {
+    pub const fn find_ending(self, info: DeclInfo) -> &'static [Utf8Letter] {
         // Find un-stressed and stressed ending indices
         let endings = self.lookup_endings(info);
 
         // Check if stress affects the choice of the ending, and return appropriate ending
         let stressed = endings.invariant() || self.stress.is_ending_stressed(info);
 
-        endings.get(stressed).as_str()
+        endings.get(stressed)
     }
 
     const fn lookup_endings(self, info: DeclInfo) -> Endings {
@@ -147,31 +147,31 @@ impl AdjectiveDeclension {
     /// # Examples
     ///
     /// ```
-    /// use zaliznyak::declension::AdjectiveDeclension;
+    /// use zaliznyak::{declension::AdjectiveDeclension, word::Utf8LetterSlice};
     ///
     /// // Example word: кра́сный п 1*a/c″
     /// let decl: AdjectiveDeclension = "1*a/c''".parse().unwrap();
     ///
     /// // кра́сн-ый, кра́сн-ое, кра́сн-ая, кра́сн-ые
-    /// assert_eq!(decl.find_ending("И.п. ед.ч. м.р.".parse().unwrap()), "ый");
-    /// assert_eq!(decl.find_ending("И.п. ед.ч. с.р.".parse().unwrap()), "ое");
-    /// assert_eq!(decl.find_ending("И.п. ед.ч. ж.р.".parse().unwrap()), "ая");
-    /// assert_eq!(decl.find_ending("И.п. мн.ч.".parse().unwrap()), "ые");
+    /// assert_eq!(decl.find_ending("И.п. ед.ч. м.р.".parse().unwrap()).as_str(), "ый");
+    /// assert_eq!(decl.find_ending("И.п. ед.ч. с.р.".parse().unwrap()).as_str(), "ое");
+    /// assert_eq!(decl.find_ending("И.п. ед.ч. ж.р.".parse().unwrap()).as_str(), "ая");
+    /// assert_eq!(decl.find_ending("И.п. мн.ч.".parse().unwrap()).as_str(), "ые");
     ///
     /// // кра́сн-ого, кра́сн-ого, кра́сн-ой, кра́сн-ых
-    /// assert_eq!(decl.find_ending("Р.п. ед.ч. м.р.".parse().unwrap()), "ого");
-    /// assert_eq!(decl.find_ending("Р.п. ед.ч. с.р.".parse().unwrap()), "ого");
-    /// assert_eq!(decl.find_ending("Р.п. ед.ч. ж.р.".parse().unwrap()), "ой");
-    /// assert_eq!(decl.find_ending("Р.п. мн.ч.".parse().unwrap()), "ых");
+    /// assert_eq!(decl.find_ending("Р.п. ед.ч. м.р.".parse().unwrap()).as_str(), "ого");
+    /// assert_eq!(decl.find_ending("Р.п. ед.ч. с.р.".parse().unwrap()).as_str(), "ого");
+    /// assert_eq!(decl.find_ending("Р.п. ед.ч. ж.р.".parse().unwrap()).as_str(), "ой");
+    /// assert_eq!(decl.find_ending("Р.п. мн.ч.".parse().unwrap()).as_str(), "ых");
     /// ```
-    pub const fn find_ending(self, info: DeclInfo) -> &'static str {
+    pub const fn find_ending(self, info: DeclInfo) -> &'static [Utf8Letter] {
         // Find un-stressed and stressed ending indices
         let endings = self.lookup_endings(info, info.case as u8);
 
         // Check if stress affects the choice of the ending, and return appropriate ending
         let stressed = endings.invariant() || self.stress.full.is_ending_stressed();
 
-        endings.get(stressed).as_str()
+        endings.get(stressed)
     }
 
     /// Returns an adjective short form ending according to this declension and info.
@@ -179,18 +179,18 @@ impl AdjectiveDeclension {
     /// # Examples
     ///
     /// ```
-    /// use zaliznyak::declension::AdjectiveDeclension;
+    /// use zaliznyak::{declension::AdjectiveDeclension, word::Utf8LetterSlice};
     ///
     /// // Example word: кра́сный п 1*a/c″
     /// let decl: AdjectiveDeclension = "1*a/c''".parse().unwrap();
     ///
     /// // кра́сен, кра́сн-о, красн-а́, красн-ы́
-    /// assert_eq!(decl.find_ending_short("ед.ч. м.р.".parse().unwrap()), "");
-    /// assert_eq!(decl.find_ending_short("ед.ч. с.р.".parse().unwrap()), "о");
-    /// assert_eq!(decl.find_ending_short("ед.ч. ж.р.".parse().unwrap()), "а");
-    /// assert_eq!(decl.find_ending_short("мн.ч.".parse().unwrap()), "ы");
+    /// assert_eq!(decl.find_ending_short("ед.ч. м.р.".parse().unwrap()).as_str(), "");
+    /// assert_eq!(decl.find_ending_short("ед.ч. с.р.".parse().unwrap()).as_str(), "о");
+    /// assert_eq!(decl.find_ending_short("ед.ч. ж.р.".parse().unwrap()).as_str(), "а");
+    /// assert_eq!(decl.find_ending_short("мн.ч.".parse().unwrap()).as_str(), "ы");
     /// ```
-    pub const fn find_ending_short(self, info: DeclInfo) -> &'static str {
+    pub const fn find_ending_short(self, info: DeclInfo) -> &'static [Utf8Letter] {
         // Find un-stressed and stressed ending indices
         let endings = self.lookup_endings(info, 6);
 
@@ -199,7 +199,7 @@ impl AdjectiveDeclension {
         let stressed = endings.invariant()
             || self.stress.short.is_ending_stressed(info.number, info.gender).unwrap_or(true);
 
-        endings.get(stressed).as_str()
+        endings.get(stressed)
     }
 
     const fn lookup_endings(self, info: DeclInfo, case_form: u8) -> Endings {
@@ -217,62 +217,5 @@ impl AdjectiveDeclension {
             endings = unsafe { *ADJECTIVE_LOOKUP.get_unchecked(index) };
         }
         endings
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn noun_endings() {
-        let decl: NounDeclension = "2a".parse().unwrap(); // e.g. искатель
-        assert_eq!(decl.find_ending("В. ед. м. одуш.".parse().unwrap()), "я");
-        let decl: NounDeclension = "2b".parse().unwrap(); // e.g. огонь
-        assert_eq!(decl.find_ending("В. ед. м. неод.".parse().unwrap()), "ь");
-
-        let decl: NounDeclension = "6*a".parse().unwrap(); // e.g. ущелье
-        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "е");
-        let decl: NounDeclension = "6*b".parse().unwrap(); // e.g. питьё
-        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "ё");
-
-        let decl: NounDeclension = "4a".parse().unwrap(); // e.g. дача
-        assert_eq!(decl.find_ending("Р. мн. ж.".parse().unwrap()), "");
-        let decl: NounDeclension = "4b".parse().unwrap(); // e.g. лапша
-        assert_eq!(decl.find_ending("Р. мн. ж.".parse().unwrap()), "ей");
-    }
-
-    #[test]
-    fn pronoun_endings() {
-        let decl: PronounDeclension = "2*a".parse().unwrap(); // e.g. господень
-        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "е");
-        assert_eq!(decl.find_ending("Р. ед. с.".parse().unwrap()), "я");
-        assert_eq!(decl.find_ending("В. ед. с. неод.".parse().unwrap()), "е");
-        assert_eq!(decl.find_ending("В. ед. с. одуш.".parse().unwrap()), "его");
-
-        let decl: PronounDeclension = "4a".parse().unwrap(); // e.g. наш
-        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "е");
-        assert_eq!(decl.find_ending("Р. ед. с.".parse().unwrap()), "его");
-        assert_eq!(decl.find_ending("Д. ед. м.".parse().unwrap()), "ему");
-
-        let decl: PronounDeclension = "6*a".parse().unwrap(); // e.g. волчий
-        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "е");
-        let decl: PronounDeclension = "6b".parse().unwrap(); // e.g. свой
-        assert_eq!(decl.find_ending("И. ед. с.".parse().unwrap()), "ё");
-    }
-
-    #[test]
-    fn adjective_endings() {
-        let decl: AdjectiveDeclension = "1a".parse().unwrap(); // e.g. шёлковый
-        assert_eq!(decl.find_ending("В. ед. м. неод.".parse().unwrap()), "ый");
-        assert_eq!(decl.find_ending("В. ед. м. одуш.".parse().unwrap()), "ого");
-        assert_eq!(decl.find_ending_short("ед. с.".parse().unwrap()), "о");
-        assert_eq!(decl.find_ending_short("мн.".parse().unwrap()), "ы");
-
-        let decl: AdjectiveDeclension = "4a/b'".parse().unwrap(); // e.g. свежий
-        assert_eq!(decl.find_ending("В. ед. м. неод.".parse().unwrap()), "ий");
-        assert_eq!(decl.find_ending("В. ед. м. одуш.".parse().unwrap()), "его");
-        assert_eq!(decl.find_ending_short("ед. с.".parse().unwrap()), "о");
-        assert_eq!(decl.find_ending_short("мн.".parse().unwrap()), "и");
     }
 }

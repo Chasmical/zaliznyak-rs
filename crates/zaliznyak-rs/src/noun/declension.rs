@@ -15,33 +15,25 @@ impl Noun {
 
 impl NounInfo {
     pub fn inflect(&self, stem: Word, case: CaseEx, number: Number) -> WordBuf {
-        let mut buf = WordBuf::with_capacity_for(stem);
+        let mut word = WordBuf::with_stem(stem, 5);
+        let mut buf = InflectionBuf::new(&mut word);
 
-        buf.inflect(|dst| {
-            let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
+        if let Some(decl) = self.declension {
+            let number = self.tantum.unwrap_or(number);
+            let (case, number) = case.normalize_with(number);
 
-            if let Some(decl) = self.declension {
-                let number = self.tantum.unwrap_or(number);
-                let (case, number) = case.normalize_with(number);
+            let info =
+                DeclInfo { case, number, gender: self.declension_gender, animacy: self.animacy };
 
-                let info = DeclInfo {
-                    case,
-                    number,
-                    gender: self.declension_gender,
-                    animacy: self.animacy,
-                };
+            match decl {
+                Declension::Noun(decl) => decl.inflect(info, &mut buf),
+                Declension::Adjective(decl) => decl.inflect(info, &mut buf),
+                Declension::Pronoun(_) => unimplemented!(), // Nouns don't decline by pronoun declension
+            };
+        }
 
-                match decl {
-                    Declension::Noun(decl) => decl.inflect(info, &mut buf),
-                    Declension::Adjective(decl) => decl.inflect(info, &mut buf),
-                    Declension::Pronoun(_) => unimplemented!(), // Nouns don't decline by pronoun declension
-                };
-            }
-
-            buf.into()
-        });
-
-        buf
+        buf.finish(&mut word);
+        word
     }
 }
 
@@ -70,6 +62,15 @@ impl NounDeclension {
 
         if self.flags.has_star() {
             self.apply_vowel_alternation(info, buf);
+        }
+
+        // TODO: Move the stress to the ending, if needed
+        if self.stress.is_ending_stressed(info) {
+            if let Some(ending_pos) = buf.ending().iter().position(|x| x.is_vowel()) {
+                buf.stress_at = buf.stem_len + ending_pos + 1;
+            } else {
+                buf.stress_at = buf.stem().iter().rposition(|x| x.is_vowel()).unwrap() + 1;
+            }
         }
     }
 
@@ -404,6 +405,7 @@ impl NounDeclension {
             // Stress 'е' in the stem into 'ё'
             if stress_into_yo {
                 *ye = Utf8Letter::Ё;
+                buf.set_stress_at(ye);
             }
         }
     }
@@ -412,17 +414,21 @@ impl NounDeclension {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::word::Accent;
 
     fn decl(word: &str, info: &str) -> [String; 2] {
-        let word: WordBuf = word.parse().unwrap();
-
-        let stem = NounStemType::identify(word.as_letters()).unwrap().0;
-        let stem = Word::new(stem, stem.len(), 0).to_owned();
+        let mut stem: WordBuf = word.parse().unwrap();
+        let _ty = NounStemType::identify_trim(&mut stem);
 
         let noun = Noun { stem, info: info.parse().unwrap() };
 
         Number::VALUES.map(|number| {
-            Case::VALUES.map(|case| noun.inflect(case.into(), number).into_string()).join(", ")
+            Case::VALUES
+                .map(|case| {
+                    let word = noun.inflect(case.into(), number);
+                    word.display().accent(Accent::explicit(Accent::ACUTE)).to_string()
+                })
+                .join(", ")
         })
     }
 

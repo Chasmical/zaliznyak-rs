@@ -1,4 +1,7 @@
-use crate::{util::enum_conversion, word::Utf8Letter};
+use crate::{
+    util::enum_conversion,
+    word::{Utf8Letter, WordBuf},
+};
 use thiserror::Error;
 
 macro_rules! impl_stem_type {
@@ -172,7 +175,7 @@ enum_conversion! {
     else { AdjectiveStemTypeError }
 }
 
-const fn identify_stem_type(stem: Utf8Letter, after: Option<Utf8Letter>) -> Option<AnyStemType> {
+const fn identify_any(stem: Utf8Letter, after: Option<Utf8Letter>) -> Option<AnyStemType> {
     use Utf8Letter::*;
 
     Some(match stem {
@@ -211,6 +214,7 @@ impl NounStemType {
     /// assert_eq!(NounStemType::identify("ы"), None);
     /// assert_eq!(NounStemType::identify(""), None);
     /// ```
+    #[must_use]
     pub const fn identify(word: &[Utf8Letter]) -> Option<(&[Utf8Letter], NounStemType)> {
         // Read the word's last char
         let (&last, word_without_last) = word.split_last()?;
@@ -227,8 +231,20 @@ impl NounStemType {
         };
 
         // Identify the stem type from letters
-        let stem_type = identify_stem_type(stem_char, after)?;
+        let stem_type = identify_any(stem_char, after)?;
         Some((stem, stem_type.into()))
+    }
+
+    #[must_use]
+    pub fn identify_trim(word: &mut WordBuf) -> Option<NounStemType> {
+        match Self::identify(word.as_letters()) {
+            Some((stem, ty)) => {
+                let stem_len = stem.len();
+                word.set_stem_len(stem_len);
+                Some(ty)
+            },
+            None => None,
+        }
     }
 }
 
@@ -255,9 +271,22 @@ impl PronounStemType {
     /// assert_eq!(PronounStemType::identify("ы"), None);
     /// assert_eq!(PronounStemType::identify(""), None);
     /// ```
+    #[must_use]
     pub const fn identify(word: &[Utf8Letter]) -> Option<(&[Utf8Letter], PronounStemType)> {
         let (stem, stem_type) = NounStemType::identify(word)?;
         Some((stem, AnyStemType::from(stem_type).try_into().ok()?))
+    }
+
+    #[must_use]
+    pub fn identify_trim(word: &mut WordBuf) -> Option<PronounStemType> {
+        match Self::identify(word.as_letters()) {
+            Some((stem, ty)) => {
+                let stem_len = stem.len();
+                word.set_stem_len(stem_len);
+                Some(ty)
+            },
+            None => None,
+        }
     }
 }
 
@@ -288,6 +317,7 @@ impl AdjectiveStemType {
     /// assert_eq!(StemType::identify("ая"), None);
     /// assert_eq!(StemType::identify(""), None);
     /// ```
+    #[must_use]
     pub const fn identify(word: &[Utf8Letter]) -> Option<(&[Utf8Letter], AdjectiveStemType, bool)> {
         let (word, is_reflexive) = {
             // Remove 'ся' suffix from reflexive adjectives
@@ -310,7 +340,19 @@ impl AdjectiveStemType {
         let &stem_char = word.last()?;
 
         // Identify the stem type from letters
-        let stem_type = identify_stem_type(stem_char, Some(ending_first_char))?;
+        let stem_type = identify_any(stem_char, Some(ending_first_char))?;
         Some((word, stem_type.try_into().ok()?, is_reflexive))
+    }
+
+    #[must_use]
+    pub fn identify_trim(word: &mut WordBuf) -> Option<(AdjectiveStemType, bool)> {
+        match Self::identify(word.as_letters()) {
+            Some((stem, ty, is_reflexive)) => {
+                let stem_len = stem.len();
+                word.set_stem_len(stem_len);
+                Some((ty, is_reflexive))
+            },
+            None => None,
+        }
     }
 }

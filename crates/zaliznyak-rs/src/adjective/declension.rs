@@ -21,61 +21,59 @@ impl Adjective {
 
 impl AdjectiveInfo {
     pub fn inflect(&self, stem: Word, info: DeclInfo) -> WordBuf {
-        let mut buf = WordBuf::with_capacity_for(stem);
-        buf.inflect(|dst| {
-            let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
+        let mut word = WordBuf::with_stem(stem, 5);
+        let mut buf = InflectionBuf::new(&mut word);
 
-            if let Some(decl) = self.declension {
-                match decl {
-                    Declension::Adjective(decl) => decl.inflect(info, &mut buf),
-                    Declension::Pronoun(decl) => decl.inflect(info, &mut buf),
-                    Declension::Noun(_) => unimplemented!(), // Adjectives don't decline by noun declension
-                };
-            }
+        if let Some(decl) = self.declension {
+            match decl {
+                Declension::Adjective(decl) => decl.inflect(info, &mut buf),
+                Declension::Pronoun(decl) => decl.inflect(info, &mut buf),
+                Declension::Noun(_) => unimplemented!(), // Adjectives don't decline by noun declension
+            };
+        }
 
-            buf.into()
-        });
-        buf
+        buf.finish(&mut word);
+        word
     }
 
     pub fn inflect_short(&self, stem: Word, info: DeclInfo, force: bool) -> Option<WordBuf> {
-        let mut buf = WordBuf::with_capacity_for(stem);
-        buf.inflect(|dst| {
-            // Only regular adjective-declension adjectives can have short forms.
-            // Also, check adjective flags (—✕⌧) to see if there are difficulties.
+        // Only regular adjective-declension adjectives can have short forms.
+        // Also, check adjective flags (—✕⌧) to see if there are difficulties.
 
-            if self.kind == AdjectiveKind::Regular
-                && self.flags.has_short_form(info).unwrap_or(force)
-                && let Some(Declension::Adjective(decl)) = self.declension
-            {
-                let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
-                decl.inflect_short(info, &mut buf);
-                buf.into()
-            } else {
-                Word::default()
-            }
-        });
-        if buf.is_empty() { None } else { Some(buf) }
+        if self.kind == AdjectiveKind::Regular
+            && self.flags.has_short_form(info).unwrap_or(force)
+            && let Some(Declension::Adjective(decl)) = self.declension
+        {
+            let mut word = WordBuf::with_stem(stem, 5);
+            let mut buf = InflectionBuf::new(&mut word);
+
+            decl.inflect_short(info, &mut buf);
+
+            buf.finish(&mut word);
+            Some(word)
+        } else {
+            None
+        }
     }
 
     pub fn inflect_comparative(&self, stem: Word) -> Option<WordBuf> {
-        let mut buf = WordBuf::with_capacity_for(stem);
-        buf.inflect(|dst| {
-            // Only regular adjective-declension adjectives can have comparative forms.
-            // Also, check adjective flag (~) to see if it has a comparative form.
+        // Only regular adjective-declension adjectives can have comparative forms.
+        // Also, check adjective flag (~) to see if it has a comparative form.
 
-            if self.kind == AdjectiveKind::Regular
-                && !self.flags.has_no_comparative_form()
-                && let Some(Declension::Adjective(decl)) = self.declension
-            {
-                let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
-                decl.inflect_comparative(&mut buf);
-                buf.into()
-            } else {
-                Word::default()
-            }
-        });
-        if buf.is_empty() { None } else { Some(buf) }
+        if self.kind == AdjectiveKind::Regular
+            && !self.flags.has_no_comparative_form()
+            && let Some(Declension::Adjective(decl)) = self.declension
+        {
+            let mut word = WordBuf::with_stem(stem, 5);
+            let mut buf = InflectionBuf::new(&mut word);
+
+            decl.inflect_comparative(&mut buf);
+
+            buf.finish(&mut word);
+            Some(word)
+        } else {
+            None
+        }
     }
 }
 

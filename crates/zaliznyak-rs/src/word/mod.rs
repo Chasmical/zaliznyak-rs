@@ -88,7 +88,7 @@ pub use display::*;
 pub use from_str::*;
 pub use letter::*;
 
-use crate::util::{InflectionBuf, StackVec};
+use crate::util::StackVec;
 
 /// Max amount of letters that can be stored in [`WordBuf`] on the stack.
 ///
@@ -126,7 +126,7 @@ use crate::util::{InflectionBuf, StackVec};
 /// 82.6% of all the words in Zaliznyak's dictionary. Considering that most words that are longer
 /// than 10 letters are either extremely specific or rare, the 82.6% percentage is actually more
 /// than enough for general-purpose declension.
-const WORD_BUF_LETTERS: usize = 15;
+pub(crate) const WORD_BUF_LETTERS: usize = 15;
 
 /// A UTF-8-encoded lowercase cyrillic string.
 ///
@@ -180,12 +180,20 @@ pub struct Word<'a> {
 
 impl WordBuf {
     #[must_use]
-    pub(crate) fn with_capacity_for(stem: Word) -> Self {
-        Self::with_capacity(stem.as_letters().len() + 5)
-    }
-    #[must_use]
     pub(crate) fn with_capacity(cap: usize) -> Self {
         Self { buf: StackVec::with_capacity(cap), stem_len: 0, stress_at: 0 }
+    }
+    #[must_use]
+    pub(crate) fn with_stem(stem: Word, reserve: usize) -> Self {
+        let mut buf = StackVec::with_capacity(stem.as_letters().len() + reserve);
+
+        unsafe {
+            let stem = stem.as_letters();
+            buf.slice_full_capacity_mut()[..stem.len()].assume_init_mut().copy_from_slice(stem);
+            buf.set_len(stem.len());
+        }
+
+        Self { buf, stem_len: stem.stem_len, stress_at: stem.stress_at }
     }
 
     /// Returns `true` if this `WordBuf` is empty.
@@ -237,15 +245,15 @@ impl WordBuf {
         self.buf.into_string()
     }
 
-    // TODO: mark unsafe, since it could potentially access uninit letters?
-    pub(crate) const fn inflect<F: [const] FnOnce(&mut [Utf8Letter]) -> Word<'_>>(&mut self, f: F) {
-        let dst = unsafe { self.buf.slice_full_capacity_mut().assume_init_mut() };
-        let word = f(dst);
+    pub(crate) fn set_stem_len(&mut self, stem_len: usize) {
+        debug_assert!(stem_len <= self.buf.len());
+        unsafe { self.buf.set_len(stem_len) };
+        self.stem_len = stem_len;
 
-        self.stem_len = word.stem_len;
-        self.stress_at = word.stress_at;
-        let len = word.buf.len();
-        unsafe { self.buf.set_len(len) };
+        if self.stress_at > stem_len {
+            let first_vowel = self.as_letters().iter().position(|x| x.is_vowel());
+            self.stress_at = first_vowel.map_or(0, |x| x + 1);
+        }
     }
 }
 
@@ -321,13 +329,5 @@ impl const AsRef<str> for WordBuf {
 impl const AsRef<str> for Word<'_> {
     fn as_ref(&self) -> &str {
         self.as_str()
-    }
-}
-
-// TODO: refactor to pass stress_pos
-impl<'a> const From<InflectionBuf<'a>> for Word<'a> {
-    fn from(value: InflectionBuf<'a>) -> Self {
-        let stem_len = value.stem_len / 2;
-        Self::new(value.finish(), stem_len, 0)
     }
 }

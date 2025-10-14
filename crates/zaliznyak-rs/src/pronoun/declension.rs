@@ -14,21 +14,19 @@ impl Pronoun {
 
 impl PronounInfo {
     pub fn inflect(&self, stem: Word, info: DeclInfo) -> WordBuf {
-        let mut buf = WordBuf::with_capacity_for(stem);
-        buf.inflect(|dst| {
-            let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
+        let mut word = WordBuf::with_stem(stem, 5);
+        let mut buf = InflectionBuf::new(&mut word);
 
-            if let Some(decl) = self.declension {
-                match decl {
-                    Declension::Pronoun(decl) => decl.inflect(info, &mut buf),
-                    Declension::Adjective(decl) => decl.inflect(info, &mut buf),
-                    Declension::Noun(_) => unimplemented!(), // Pronouns don't decline by noun declension
-                };
-            }
+        if let Some(decl) = self.declension {
+            match decl {
+                Declension::Pronoun(decl) => decl.inflect(info, &mut buf),
+                Declension::Adjective(decl) => decl.inflect(info, &mut buf),
+                Declension::Noun(_) => unimplemented!(), // Pronouns don't decline by noun declension
+            };
+        }
 
-            buf.into()
-        });
-        buf
+        buf.finish(&mut word);
+        word
     }
 }
 

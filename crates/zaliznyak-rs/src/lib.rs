@@ -21,6 +21,7 @@
 #![feature(slice_from_ptr_range)]
 #![feature(const_slice_from_ptr_range)]
 #![feature(maybe_uninit_uninit_array_transpose)]
+#![feature(substr_range)]
 #![cfg_attr(test, feature(test))]
 #![allow(internal_features, confusable_idents)]
 #![allow(clippy::deref_addrof)]

@@ -217,8 +217,10 @@ impl fmt::Display for Display<'_> {
             AccentMode::None => false,
             AccentMode::Explicit => self.word.stress_at > 0,
             AccentMode::Implicit => {
-                let implicit_pos = find_implicit_insert_stress_pos(self.word.as_letters());
-                implicit_pos != Some(self.word.stress_at)
+                self.word.stress_at > 0 && {
+                    let implicit_pos = find_implicit_insert_stress_pos(self.word.as_letters());
+                    implicit_pos != Some(self.word.stress_at)
+                }
             },
         };
 

@@ -172,10 +172,7 @@ enum_conversion! {
     else { AdjectiveStemTypeError }
 }
 
-const fn identify_stem_type(
-    stem: Utf8Letter,
-    after: Option<Utf8Letter>,
-) -> Option<AnyStemType> {
+const fn identify_stem_type(stem: Utf8Letter, after: Option<Utf8Letter>) -> Option<AnyStemType> {
     use Utf8Letter::*;
 
     Some(match stem {
@@ -214,15 +211,15 @@ impl NounStemType {
     /// assert_eq!(NounStemType::identify("ы"), None);
     /// assert_eq!(NounStemType::identify(""), None);
     /// ```
-    pub const fn identify(word: &str) -> Option<(&str, NounStemType)> {
+    pub const fn identify(word: &[Utf8Letter]) -> Option<(&[Utf8Letter], NounStemType)> {
         // Read the word's last char
-        let (word_without_last, last) = Utf8Letter::split_last(word)?;
+        let (&last, word_without_last) = word.split_last()?;
 
         let (stem, stem_char, after) = {
             // If the last char is trimmable, exclude it from stem
             if last.is_stem_trim_letter() {
                 // Read the actual last stem char
-                let stem_char = Utf8Letter::split_last(word_without_last)?.1;
+                let &stem_char = word_without_last.last()?;
                 (word_without_last, stem_char, Some(last))
             } else {
                 (word, last, None)
@@ -258,7 +255,7 @@ impl PronounStemType {
     /// assert_eq!(PronounStemType::identify("ы"), None);
     /// assert_eq!(PronounStemType::identify(""), None);
     /// ```
-    pub const fn identify(word: &str) -> Option<(&str, PronounStemType)> {
+    pub const fn identify(word: &[Utf8Letter]) -> Option<(&[Utf8Letter], PronounStemType)> {
         let (stem, stem_type) = NounStemType::identify(word)?;
         Some((stem, AnyStemType::from(stem_type).try_into().ok()?))
     }
@@ -291,26 +288,26 @@ impl AdjectiveStemType {
     /// assert_eq!(StemType::identify("ая"), None);
     /// assert_eq!(StemType::identify(""), None);
     /// ```
-    pub const fn identify(word: &str) -> Option<(&str, AdjectiveStemType, bool)> {
+    pub const fn identify(word: &[Utf8Letter]) -> Option<(&[Utf8Letter], AdjectiveStemType, bool)> {
         let (word, is_reflexive) = {
             // Remove 'ся' suffix from reflexive adjectives
 
             // FIXME(const-hack): Replace with `.strip_suffix().map_or((word, false), |x| (x, true))`.
-            if let Some((stripped, last)) = word.as_bytes().split_last_chunk::<4>()
-                && last as &[u8] == "ся".as_bytes()
+            if let Some((stripped, last)) = word.split_last_chunk::<2>()
+                && last == &[Utf8Letter::С, Utf8Letter::Я]
             {
-                (unsafe { str::from_utf8_unchecked(stripped) }, true)
+                (stripped, true)
             } else {
                 (word, false)
             }
         };
 
         // Read the word's two ending chars
-        let (word, _ending_last_char) = Utf8Letter::split_last(word)?;
-        let (word, ending_first_char) = Utf8Letter::split_last(word)?;
+        let (&_ending_last_char, word) = word.split_last()?;
+        let (&ending_first_char, word) = word.split_last()?;
 
         // Read the stem's last char
-        let (_, stem_char) = Utf8Letter::split_last(word)?;
+        let &stem_char = word.last()?;
 
         // Identify the stem type from letters
         let stem_type = identify_stem_type(stem_char, Some(ending_first_char))?;

@@ -14,13 +14,13 @@ impl<'a> InflectionBuf<'a> {
         stem_len / 2 + 5
     }
 
-    pub const fn with_stem_in(stem: &str, buf: &'a mut [Utf8Letter]) -> Self {
-        let required_len = Self::max_char_len_for_noun(stem.len());
+    pub const fn with_stem_in(stem: &[Utf8Letter], buf: &'a mut [Utf8Letter]) -> Self {
+        let required_len = stem.len() + 5;
         assert!(buf.len() >= required_len);
-        let buf = buf.as_mut_ptr();
 
-        unsafe { std::ptr::copy_nonoverlapping(stem.as_ptr(), buf.cast(), stem.len()) };
-        Self { start: unsafe { &mut *buf }, len: stem.len(), stem_len: stem.len() }
+        buf[..stem.len()].copy_from_slice(stem);
+        let stem_len = stem.len() * 2;
+        Self { start: unsafe { &mut *buf.as_mut_ptr() }, stem_len, len: stem_len }
     }
 
     pub const fn as_slice(&self) -> &[Utf8Letter] {

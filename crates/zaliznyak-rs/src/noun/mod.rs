@@ -1,6 +1,7 @@
 use crate::{
     categories::{Animacy, Gender, GenderEx, Number},
-    declension::{AdjectiveStemType, Declension, NounStemType},
+    declension::Declension,
+    word::WordBuf,
 };
 use thiserror::Error;
 
@@ -13,7 +14,7 @@ pub use from_str::*;
 // FIXME(const-hack): Derive PartialEq with #[derive_const] when String supports it.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Noun {
-    stem: String,
+    stem: WordBuf,
     info: NounInfo,
 }
 
@@ -37,32 +38,7 @@ pub enum NewNounError {
 }
 
 impl Noun {
-    pub const fn from_stem(stem: String, info: NounInfo) -> Self {
+    pub const fn from_stem(stem: WordBuf, info: NounInfo) -> Self {
         Self { stem, info }
-    }
-
-    pub fn from_word(word: &str, info: NounInfo) -> Result<Self, NewNounError> {
-        let stem = match info.declension {
-            Some(Declension::Noun(decl)) => {
-                let (stem, ty) = NounStemType::identify(word).ok_or(NewNounError::InvalidStem)?;
-
-                if ty != decl.stem_type {
-                    return Err(NewNounError::NotMatchingStemType);
-                }
-                stem
-            },
-            Some(Declension::Adjective(decl)) => {
-                let (stem, ty, _) =
-                    AdjectiveStemType::identify(word).ok_or(NewNounError::InvalidStem)?;
-
-                if ty != decl.stem_type {
-                    return Err(NewNounError::NotMatchingStemType);
-                }
-                stem
-            },
-            _ => word,
-        };
-
-        Ok(Self { stem: stem.to_owned(), info })
     }
 }

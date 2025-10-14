@@ -9,7 +9,7 @@ use crate::{
 
 impl Noun {
     pub fn inflect(&self, case: CaseEx, number: Number) -> WordBuf {
-        self.info.inflect(&self.stem, case, number)
+        self.info.inflect(self.stem.borrow(), case, number)
     }
 
     pub fn inflect_into<'a>(
@@ -18,12 +18,12 @@ impl Noun {
         number: Number,
         dst: &'a mut [Utf8Letter],
     ) -> Word<'a> {
-        self.info.inflect_into(&self.stem, case, number, dst)
+        self.info.inflect_into(self.stem.borrow(), case, number, dst)
     }
 }
 
 impl NounInfo {
-    pub fn inflect(&self, stem: &str, case: CaseEx, number: Number) -> WordBuf {
+    pub fn inflect(&self, stem: Word, case: CaseEx, number: Number) -> WordBuf {
         let mut buf = WordBuf::with_capacity_for(stem);
         buf.inflect(|dst| self.inflect_into(stem, case, number, dst));
         buf
@@ -31,12 +31,12 @@ impl NounInfo {
 
     pub fn inflect_into<'a>(
         &self,
-        stem: &str,
+        stem: Word,
         case: CaseEx,
         number: Number,
         dst: &'a mut [Utf8Letter],
     ) -> Word<'a> {
-        let mut buf = InflectionBuf::with_stem_in(stem, dst);
+        let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
 
         if let Some(decl) = self.declension {
             let number = self.tantum.unwrap_or(number);
@@ -425,37 +425,24 @@ mod tests {
     use super::*;
 
     fn decl(word: &str, info: &str) -> [String; 2] {
-        let noun = Noun {
-            stem: NounStemType::identify(word).unwrap().0.into(),
-            info: info.parse().unwrap(),
-        };
+        let word: WordBuf = word.parse().unwrap();
+
+        let stem = NounStemType::identify(word.as_letters()).unwrap().0;
+        let stem = Word::new(stem, stem.len(), 0).to_owned();
+
+        let noun = Noun { stem, info: info.parse().unwrap() };
 
         Number::VALUES.map(|number| {
             Case::VALUES.map(|case| noun.inflect(case.into(), number).into_string()).join(", ")
         })
     }
 
-    extern crate test;
-    #[bench]
-    fn bench(b: &mut test::Bencher) {
-        let noun = Noun { stem: "метл".into(), info: "ж 1*d, ё".parse().unwrap() };
-        b.iter(|| {
-            let mut s = String::new();
-            for number in Number::VALUES {
-                for case in Case::VALUES {
-                    s.push_str(noun.inflect(case.into(), number).as_str());
-                }
-            }
-            s
-        });
-    }
-
     #[test]
     fn simple_stem_types() {
         // Simple stem type 1
-        assert_eq!(decl("топор", "м 1b"), [
-            "топор, топора, топору, топор, топором, топоре",
-            "топоры, топоров, топорам, топоры, топорами, топорах",
+        assert_eq!(decl("топо́р", "м 1b"), [
+            "топо́р, топора́, топору́, топо́р, топоро́м, топоре́",
+            "топоры́, топоро́в, топора́м, топоры́, топора́ми, топора́х",
         ]);
         assert_eq!(decl("кобра", "жо 1a"), [
             "кобра, кобры, кобре, кобру, коброй, кобре",

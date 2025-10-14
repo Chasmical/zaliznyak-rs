@@ -180,8 +180,8 @@ pub struct Word<'a> {
 
 impl WordBuf {
     #[must_use]
-    pub(crate) fn with_capacity_for(stem: &str) -> Self {
-        Self::with_capacity(InflectionBuf::max_char_len_for_noun(stem.len()))
+    pub(crate) fn with_capacity_for(stem: Word) -> Self {
+        Self::with_capacity(stem.as_letters().len() + 5)
     }
     #[must_use]
     pub(crate) fn with_capacity(cap: usize) -> Self {

@@ -8,16 +8,16 @@ use crate::{
 
 impl Pronoun {
     pub fn inflect(&self, info: DeclInfo) -> WordBuf {
-        self.info.inflect(&self.stem, info)
+        self.info.inflect(self.stem.borrow(), info)
     }
 
     pub fn inflect_into<'a>(&self, info: DeclInfo, dst: &'a mut [Utf8Letter]) -> Word<'a> {
-        self.info.inflect_into(&self.stem, info, dst)
+        self.info.inflect_into(self.stem.borrow(), info, dst)
     }
 }
 
 impl PronounInfo {
-    pub fn inflect(&self, stem: &str, info: DeclInfo) -> WordBuf {
+    pub fn inflect(&self, stem: Word, info: DeclInfo) -> WordBuf {
         let mut buf = WordBuf::with_capacity_for(stem);
         buf.inflect(|dst| self.inflect_into(stem, info, dst));
         buf
@@ -25,11 +25,11 @@ impl PronounInfo {
 
     pub fn inflect_into<'a>(
         &self,
-        stem: &str,
+        stem: Word,
         info: DeclInfo,
         dst: &'a mut [Utf8Letter],
     ) -> Word<'a> {
-        let mut buf = InflectionBuf::with_stem_in(stem, dst);
+        let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
 
         if let Some(decl) = self.declension {
             match decl {

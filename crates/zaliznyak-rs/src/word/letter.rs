@@ -257,18 +257,6 @@ impl Utf8Letter {
         use LetterLastByte::*;
         matches!(self.last_byte(), А | Е | И | Й | О | У | Ы | Ь | Э | Ю | Я | Ё)
     }
-
-    // TODO: make and expose more API like this?
-    #[must_use]
-    pub(crate) const fn split_last(s: &str) -> Option<(&str, Utf8Letter)> {
-        if let Some((remaining, last)) = s.as_bytes().split_last_chunk::<2>()
-            && let Some(last) = Self::from_utf8(*last)
-        {
-            // SAFETY: The split off letter is always a valid UTF-8 char boundary.
-            return Some((unsafe { str::from_utf8_unchecked(remaining) }, last));
-        }
-        None
-    }
 }
 
 impl const AsRef<str> for Utf8Letter {

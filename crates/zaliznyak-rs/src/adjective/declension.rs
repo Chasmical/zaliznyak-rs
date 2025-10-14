@@ -9,17 +9,17 @@ use crate::{
 
 impl Adjective {
     pub fn inflect(&self, info: DeclInfo) -> WordBuf {
-        self.info.inflect(&self.stem, info)
+        self.info.inflect(self.stem.borrow(), info)
     }
     pub fn inflect_short(&self, info: DeclInfo, force: bool) -> Option<WordBuf> {
-        self.info.inflect_short(&self.stem, info, force)
+        self.info.inflect_short(self.stem.borrow(), info, force)
     }
     pub fn inflect_comparative(&self) -> Option<WordBuf> {
-        self.info.inflect_comparative(&self.stem)
+        self.info.inflect_comparative(self.stem.borrow())
     }
 
     pub fn inflect_into<'a>(&self, info: DeclInfo, dst: &'a mut [Utf8Letter]) -> Word<'a> {
-        self.info.inflect_into(&self.stem, info, dst)
+        self.info.inflect_into(self.stem.borrow(), info, dst)
     }
     pub fn inflect_short_into<'a>(
         &self,
@@ -27,25 +27,25 @@ impl Adjective {
         force: bool,
         dst: &'a mut [Utf8Letter],
     ) -> Option<Word<'a>> {
-        self.info.inflect_short_into(&self.stem, info, force, dst)
+        self.info.inflect_short_into(self.stem.borrow(), info, force, dst)
     }
     pub fn inflect_comparative_into<'a>(&self, dst: &'a mut [Utf8Letter]) -> Option<Word<'a>> {
-        self.info.inflect_comparative_into(&self.stem, dst)
+        self.info.inflect_comparative_into(self.stem.borrow(), dst)
     }
 }
 
 impl AdjectiveInfo {
-    pub fn inflect(&self, stem: &str, info: DeclInfo) -> WordBuf {
+    pub fn inflect(&self, stem: Word, info: DeclInfo) -> WordBuf {
         let mut buf = WordBuf::with_capacity_for(stem);
         buf.inflect(|dst| self.inflect_into(stem, info, dst));
         buf
     }
-    pub fn inflect_short(&self, stem: &str, info: DeclInfo, force: bool) -> Option<WordBuf> {
+    pub fn inflect_short(&self, stem: Word, info: DeclInfo, force: bool) -> Option<WordBuf> {
         let mut buf = WordBuf::with_capacity_for(stem);
         buf.inflect(|dst| self.inflect_short_into(stem, info, force, dst).unwrap_or_default());
         if buf.is_empty() { None } else { Some(buf) }
     }
-    pub fn inflect_comparative(&self, stem: &str) -> Option<WordBuf> {
+    pub fn inflect_comparative(&self, stem: Word) -> Option<WordBuf> {
         let mut buf = WordBuf::with_capacity_for(stem);
         buf.inflect(|dst| self.inflect_comparative_into(stem, dst).unwrap_or_default());
         if buf.is_empty() { None } else { Some(buf) }
@@ -53,11 +53,11 @@ impl AdjectiveInfo {
 
     pub fn inflect_into<'a>(
         &self,
-        stem: &str,
+        stem: Word,
         info: DeclInfo,
         dst: &'a mut [Utf8Letter],
     ) -> Word<'a> {
-        let mut buf = InflectionBuf::with_stem_in(stem, dst);
+        let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
 
         if let Some(decl) = self.declension {
             match decl {
@@ -71,7 +71,7 @@ impl AdjectiveInfo {
     }
     pub fn inflect_short_into<'a>(
         &self,
-        stem: &str,
+        stem: Word,
         info: DeclInfo,
         force: bool,
         dst: &'a mut [Utf8Letter],
@@ -83,7 +83,7 @@ impl AdjectiveInfo {
             && self.flags.has_short_form(info).unwrap_or(force)
             && let Some(Declension::Adjective(decl)) = self.declension
         {
-            let mut buf = InflectionBuf::with_stem_in(stem, dst);
+            let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
             decl.inflect_short(info, &mut buf);
             Some(buf.into())
         } else {
@@ -92,7 +92,7 @@ impl AdjectiveInfo {
     }
     pub fn inflect_comparative_into<'a>(
         &self,
-        stem: &str,
+        stem: Word,
         dst: &'a mut [Utf8Letter],
     ) -> Option<Word<'a>> {
         // Only regular adjective-declension adjectives can have comparative forms.
@@ -102,7 +102,7 @@ impl AdjectiveInfo {
             && !self.flags.has_no_comparative_form()
             && let Some(Declension::Adjective(decl)) = self.declension
         {
-            let mut buf = InflectionBuf::with_stem_in(stem, dst);
+            let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
             decl.inflect_comparative(&mut buf);
             Some(buf.into())
         } else {

@@ -11,48 +11,37 @@ impl Noun {
     pub fn inflect(&self, case: CaseEx, number: Number) -> WordBuf {
         self.info.inflect(self.stem.borrow(), case, number)
     }
-
-    pub fn inflect_into<'a>(
-        &self,
-        case: CaseEx,
-        number: Number,
-        dst: &'a mut [Utf8Letter],
-    ) -> Word<'a> {
-        self.info.inflect_into(self.stem.borrow(), case, number, dst)
-    }
 }
 
 impl NounInfo {
     pub fn inflect(&self, stem: Word, case: CaseEx, number: Number) -> WordBuf {
         let mut buf = WordBuf::with_capacity_for(stem);
-        buf.inflect(|dst| self.inflect_into(stem, case, number, dst));
+
+        buf.inflect(|dst| {
+            let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
+
+            if let Some(decl) = self.declension {
+                let number = self.tantum.unwrap_or(number);
+                let (case, number) = case.normalize_with(number);
+
+                let info = DeclInfo {
+                    case,
+                    number,
+                    gender: self.declension_gender,
+                    animacy: self.animacy,
+                };
+
+                match decl {
+                    Declension::Noun(decl) => decl.inflect(info, &mut buf),
+                    Declension::Adjective(decl) => decl.inflect(info, &mut buf),
+                    Declension::Pronoun(_) => unimplemented!(), // Nouns don't decline by pronoun declension
+                };
+            }
+
+            buf.into()
+        });
+
         buf
-    }
-
-    pub fn inflect_into<'a>(
-        &self,
-        stem: Word,
-        case: CaseEx,
-        number: Number,
-        dst: &'a mut [Utf8Letter],
-    ) -> Word<'a> {
-        let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
-
-        if let Some(decl) = self.declension {
-            let number = self.tantum.unwrap_or(number);
-            let (case, number) = case.normalize_with(number);
-
-            let info =
-                DeclInfo { case, number, gender: self.declension_gender, animacy: self.animacy };
-
-            match decl {
-                Declension::Noun(decl) => decl.inflect(info, &mut buf),
-                Declension::Adjective(decl) => decl.inflect(info, &mut buf),
-                Declension::Pronoun(_) => unimplemented!(), // Nouns don't decline by pronoun declension
-            };
-        }
-
-        buf.into()
     }
 }
 

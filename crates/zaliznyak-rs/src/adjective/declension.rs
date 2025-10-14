@@ -17,97 +17,65 @@ impl Adjective {
     pub fn inflect_comparative(&self) -> Option<WordBuf> {
         self.info.inflect_comparative(self.stem.borrow())
     }
-
-    pub fn inflect_into<'a>(&self, info: DeclInfo, dst: &'a mut [Utf8Letter]) -> Word<'a> {
-        self.info.inflect_into(self.stem.borrow(), info, dst)
-    }
-    pub fn inflect_short_into<'a>(
-        &self,
-        info: DeclInfo,
-        force: bool,
-        dst: &'a mut [Utf8Letter],
-    ) -> Option<Word<'a>> {
-        self.info.inflect_short_into(self.stem.borrow(), info, force, dst)
-    }
-    pub fn inflect_comparative_into<'a>(&self, dst: &'a mut [Utf8Letter]) -> Option<Word<'a>> {
-        self.info.inflect_comparative_into(self.stem.borrow(), dst)
-    }
 }
 
 impl AdjectiveInfo {
     pub fn inflect(&self, stem: Word, info: DeclInfo) -> WordBuf {
         let mut buf = WordBuf::with_capacity_for(stem);
-        buf.inflect(|dst| self.inflect_into(stem, info, dst));
+        buf.inflect(|dst| {
+            let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
+
+            if let Some(decl) = self.declension {
+                match decl {
+                    Declension::Adjective(decl) => decl.inflect(info, &mut buf),
+                    Declension::Pronoun(decl) => decl.inflect(info, &mut buf),
+                    Declension::Noun(_) => unimplemented!(), // Adjectives don't decline by noun declension
+                };
+            }
+
+            buf.into()
+        });
         buf
     }
+
     pub fn inflect_short(&self, stem: Word, info: DeclInfo, force: bool) -> Option<WordBuf> {
         let mut buf = WordBuf::with_capacity_for(stem);
-        buf.inflect(|dst| self.inflect_short_into(stem, info, force, dst).unwrap_or_default());
+        buf.inflect(|dst| {
+            // Only regular adjective-declension adjectives can have short forms.
+            // Also, check adjective flags (—✕⌧) to see if there are difficulties.
+
+            if self.kind == AdjectiveKind::Regular
+                && self.flags.has_short_form(info).unwrap_or(force)
+                && let Some(Declension::Adjective(decl)) = self.declension
+            {
+                let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
+                decl.inflect_short(info, &mut buf);
+                buf.into()
+            } else {
+                Word::default()
+            }
+        });
         if buf.is_empty() { None } else { Some(buf) }
     }
+
     pub fn inflect_comparative(&self, stem: Word) -> Option<WordBuf> {
         let mut buf = WordBuf::with_capacity_for(stem);
-        buf.inflect(|dst| self.inflect_comparative_into(stem, dst).unwrap_or_default());
+        buf.inflect(|dst| {
+            // Only regular adjective-declension adjectives can have comparative forms.
+            // Also, check adjective flag (~) to see if it has a comparative form.
+
+            if self.kind == AdjectiveKind::Regular
+                && !self.flags.has_no_comparative_form()
+                && let Some(Declension::Adjective(decl)) = self.declension
+            {
+                let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
+                decl.inflect_comparative(&mut buf);
+                buf.into()
+            } else {
+                Word::default()
+            }
+        });
         if buf.is_empty() { None } else { Some(buf) }
-    }
-
-    pub fn inflect_into<'a>(
-        &self,
-        stem: Word,
-        info: DeclInfo,
-        dst: &'a mut [Utf8Letter],
-    ) -> Word<'a> {
-        let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
-
-        if let Some(decl) = self.declension {
-            match decl {
-                Declension::Adjective(decl) => decl.inflect(info, &mut buf),
-                Declension::Pronoun(decl) => decl.inflect(info, &mut buf),
-                Declension::Noun(_) => unimplemented!(), // Adjectives don't decline by noun declension
-            };
-        }
-
-        buf.into()
-    }
-    pub fn inflect_short_into<'a>(
-        &self,
-        stem: Word,
-        info: DeclInfo,
-        force: bool,
-        dst: &'a mut [Utf8Letter],
-    ) -> Option<Word<'a>> {
-        // Only regular adjective-declension adjectives can have short forms.
-        // Also, check adjective flags (—✕⌧) to see if there are difficulties.
-
-        if self.kind == AdjectiveKind::Regular
-            && self.flags.has_short_form(info).unwrap_or(force)
-            && let Some(Declension::Adjective(decl)) = self.declension
-        {
-            let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
-            decl.inflect_short(info, &mut buf);
-            Some(buf.into())
-        } else {
-            None
-        }
-    }
-    pub fn inflect_comparative_into<'a>(
-        &self,
-        stem: Word,
-        dst: &'a mut [Utf8Letter],
-    ) -> Option<Word<'a>> {
-        // Only regular adjective-declension adjectives can have comparative forms.
-        // Also, check adjective flag (~) to see if it has a comparative form.
-
-        if self.kind == AdjectiveKind::Regular
-            && !self.flags.has_no_comparative_form()
-            && let Some(Declension::Adjective(decl)) = self.declension
-        {
-            let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
-            decl.inflect_comparative(&mut buf);
-            Some(buf.into())
-        } else {
-            None
-        }
     }
 }
 

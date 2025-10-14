@@ -10,36 +10,25 @@ impl Pronoun {
     pub fn inflect(&self, info: DeclInfo) -> WordBuf {
         self.info.inflect(self.stem.borrow(), info)
     }
-
-    pub fn inflect_into<'a>(&self, info: DeclInfo, dst: &'a mut [Utf8Letter]) -> Word<'a> {
-        self.info.inflect_into(self.stem.borrow(), info, dst)
-    }
 }
 
 impl PronounInfo {
     pub fn inflect(&self, stem: Word, info: DeclInfo) -> WordBuf {
         let mut buf = WordBuf::with_capacity_for(stem);
-        buf.inflect(|dst| self.inflect_into(stem, info, dst));
+        buf.inflect(|dst| {
+            let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
+
+            if let Some(decl) = self.declension {
+                match decl {
+                    Declension::Pronoun(decl) => decl.inflect(info, &mut buf),
+                    Declension::Adjective(decl) => decl.inflect(info, &mut buf),
+                    Declension::Noun(_) => unimplemented!(), // Pronouns don't decline by noun declension
+                };
+            }
+
+            buf.into()
+        });
         buf
-    }
-
-    pub fn inflect_into<'a>(
-        &self,
-        stem: Word,
-        info: DeclInfo,
-        dst: &'a mut [Utf8Letter],
-    ) -> Word<'a> {
-        let mut buf = InflectionBuf::with_stem_in(stem.as_letters(), dst);
-
-        if let Some(decl) = self.declension {
-            match decl {
-                Declension::Pronoun(decl) => decl.inflect(info, &mut buf),
-                Declension::Adjective(decl) => decl.inflect(info, &mut buf),
-                Declension::Noun(_) => unimplemented!(), // Pronouns don't decline by noun declension
-            };
-        }
-
-        buf.into()
     }
 }
 

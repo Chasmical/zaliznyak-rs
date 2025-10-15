@@ -3,7 +3,7 @@ use crate::{
     categories::{DeclInfo, Gender, IntoNumber},
     declension::{AdjectiveDeclension, Declension},
     stress::AdjectiveStress,
-    util::InflectionBuf,
+    util::{InflectionBuf, StressPos},
     word::{Utf8Letter, Utf8LetterSlice, Word, WordBuf},
 };
 
@@ -79,6 +79,11 @@ impl AdjectiveInfo {
 
 impl AdjectiveDeclension {
     pub(crate) fn inflect(self, info: DeclInfo, buf: &mut InflectionBuf) {
+        // Determine the stress position
+        buf.stress =
+            if self.stress.full.is_ending_stressed() { StressPos::Ending } else { StressPos::Stem };
+
+        // Append the standard full-form ending
         buf.append_to_ending(self.find_ending(info).as_str());
 
         if self.flags.has_alternating_yo() {
@@ -87,6 +92,15 @@ impl AdjectiveDeclension {
     }
 
     pub(crate) fn inflect_short(self, info: DeclInfo, buf: &mut InflectionBuf) {
+        // Determine the stress position
+        buf.stress =
+            if self.stress.short.is_ending_stressed(info.number, info.gender).unwrap_or(true) {
+                StressPos::Ending
+            } else {
+                StressPos::Stem
+            };
+
+        // Append the standard short-form ending
         buf.append_to_ending(self.find_ending_short(info).as_str());
 
         // If declension has (1) or (2), remove the redundant 'н' in short form

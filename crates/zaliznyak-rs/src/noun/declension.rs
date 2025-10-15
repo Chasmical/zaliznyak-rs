@@ -3,7 +3,7 @@ use crate::{
     declension::{Declension, NounDeclension, NounStemType},
     noun::{Noun, NounInfo},
     stress::NounStress,
-    util::InflectionBuf,
+    util::{InflectionBuf, StressPos},
     word::{Utf8Letter, Utf8LetterSlice, Word, WordBuf},
 };
 
@@ -39,6 +39,11 @@ impl NounInfo {
 
 impl NounDeclension {
     pub(crate) fn inflect(self, info: DeclInfo, buf: &mut InflectionBuf) {
+        // Determine the stress position
+        buf.stress =
+            if self.stress.is_ending_stressed(info) { StressPos::Ending } else { StressPos::Stem };
+
+        // Append the standard ending
         buf.append_to_ending(self.find_ending(info).as_str());
 
         if self.flags.has_circle() {
@@ -48,6 +53,7 @@ impl NounDeclension {
         // Special case for stem type 8: endings from the table may start with 'я', while
         //   the stem ends with a hissing consonant. Replace 'я' with 'а' in this case.
         // E.g. мышь (жо 8e) - Д.мн. мышАм, not мышЯм.
+        // TODO: can this be moved before or after °, so that °'s if can be else-combined with е/ё's?
         if self.stem_type == NounStemType::Type8
             && buf.stem().last().is_some_and(|x| x.is_hissing())
             && let [ya @ Utf8Letter::Я, ..] = buf.ending_mut()
@@ -65,12 +71,11 @@ impl NounDeclension {
         }
 
         // TODO: Move the stress to the ending, if needed
-        if self.stress.is_ending_stressed(info) {
-            if let Some(ending_pos) = buf.ending().iter().position(|x| x.is_vowel()) {
-                buf.stress_at = buf.stem_len + ending_pos + 1;
-            } else {
-                buf.stress_at = buf.stem().iter().rposition(|x| x.is_vowel()).unwrap() + 1;
-            }
+        if buf.is_ending_stressed() {
+            let max_stress_pos = (buf.stem_len + 1).min(buf.len);
+            let candidates = unsafe { buf.as_slice().get_unchecked(..max_stress_pos) };
+
+            buf.stress_at = candidates.iter().rposition(|x| x.is_vowel()).unwrap() + 1;
         }
     }
 
@@ -300,8 +305,10 @@ impl NounDeclension {
             // E.g. лгунья (ж 6*a) - Р.мн. лгуний; статья (ж 6*b) - Р.мн. статей.
             if self.stem_type == NounStemType::Type6 {
                 if let [.., last @ Ь] = buf.stem_mut() {
-                    let ending_stressed = self.stress.is_ending_stressed(info);
-                    *last = if ending_stressed { Е } else { И };
+                    // SAFETY: The InflectionBuf isn't modified between here and the assignment of last.
+                    let last = unsafe { &mut *&raw mut *last };
+
+                    *last = if buf.is_ending_stressed() { Е } else { И };
                 }
                 // Alternations in stem type 6 happen only with 'ь'.
                 return;
@@ -327,8 +334,10 @@ impl NounDeclension {
             // 2) if 'ь'/'й' precedes the last consonant, replace 'ь'/'й' with 'ё' or 'е'.
             // E.g. гайка (ж 3*a) - Р.мн. гаек; сальце (с 5*a) - Р.мн. салец.
             if let Some(pre_last @ (Ь | Й)) = pre_last {
-                let stressed = last != Some(Ц) && self.stress.is_ending_stressed(info);
-                *pre_last = if stressed { Ё } else { Е };
+                // SAFETY: The InflectionBuf isn't modified between here and the assignment of pre_last.
+                let pre_last = unsafe { &mut *&raw mut *pre_last };
+
+                *pre_last = if last != Some(Ц) && buf.is_ending_stressed() { Ё } else { Е };
                 return;
             }
 
@@ -340,15 +349,17 @@ impl NounDeclension {
                 }
                 // 3)b) before 'к'/'г'/'х', but not after sibilant, insert 'о'
                 else if let Some(К | Г | Х) = last
-                    && let Some(pre_last) = &pre_last
+                    && let Some(&mut pre_last) = pre_last
                     && !pre_last.is_sibilant()
                 {
                     О
                 }
                 // 3)c) if unstressed insert 'е', and if stressed - 'ё'
                 else {
+                    let pre_last = pre_last.copied();
+
                     // But after 'ц' always insert 'е'
-                    if last == Some(Ц) || self.stress.is_stem_stressed(info) {
+                    if last == Some(Ц) || buf.is_stem_stressed() {
                         Е
                     } else {
                         // And after hissing consonants insert 'о' instead of 'ё'
@@ -360,27 +371,28 @@ impl NounDeclension {
         }
     }
 
-    fn apply_ye_yo_alternation(self, info: DeclInfo, buf: &mut InflectionBuf) {
-        let (stem, ending) = buf.stem_and_ending_mut();
-
+    fn apply_ye_yo_alternation(self, _info: DeclInfo, buf: &mut InflectionBuf) {
         // If there's a 'ё' in the stem:
-        if let Some(yo) = stem.iter_mut().find(|x| **x == Utf8Letter::Ё) {
+        if let Some(yo) = buf.stem_mut().iter_mut().find(|x| **x == Utf8Letter::Ё) {
+            // SAFETY: The InflectionBuf isn't modified between here and the assignment of yo.
+            let yo = unsafe { &mut *&raw mut *yo };
+
             // If stress falls on the ending, unstress 'ё' in the stem into 'е'
-            if self.stress.is_ending_stressed(info) && ending.iter().any(|x| x.is_vowel()) {
+            if buf.is_ending_stressed() && buf.ending().iter().any(|x| x.is_vowel()) {
                 *yo = Utf8Letter::Е;
             }
         } else {
             // If there's no 'ё' in the stem, find the 'е' that can be stressed into 'ё'
 
             // Find the LAST unstressed 'е' in the stem
-            let Some(ye) = stem.iter_mut().rfind(|x| **x == Utf8Letter::Е) else {
+            let Some(ye) = buf.stem_mut().iter_mut().rfind(|x| **x == Utf8Letter::Е) else {
                 todo!("Handle absence of 'е' in the stem?")
             };
             // SAFETY: The InflectionBuf isn't modified between here and the assignment of ye.
             let ye = unsafe { &mut *&raw mut *ye };
 
             let stress_into_yo = {
-                if ending.iter().any(|x| x.is_vowel()) {
+                if buf.ending().iter().any(|x| x.is_vowel()) {
                     // If ending has a vowel, see if it receives stress or not
 
                     if matches!(self.stress, NounStress::F | NounStress::Fp | NounStress::Fpp) {
@@ -388,13 +400,12 @@ impl NounDeclension {
                         //   can receive stress only if it's the only vowel in the stem.
                         // E.g. железа (1f, ё) - И.мн. железы; середа (1f′, ё) - В.ед. середу;
                         //       слеза (1f, ё) - И.мн. слёзы;    щека (3f′, ё) - В.ед. щёку.
-                        let first_vowel = stem.iter().find(|x| x.is_vowel());
+                        let first_vowel = buf.stem().iter().find(|x| x.is_vowel());
 
-                        first_vowel.is_some_and(|x| std::ptr::eq(ye, x))
-                            && self.stress.is_stem_stressed(info)
+                        first_vowel.is_some_and(|x| std::ptr::eq(ye, x)) && buf.is_stem_stressed()
                     } else {
                         // In all other cases, stress 'е' in the stem into 'ё'
-                        self.stress.is_stem_stressed(info)
+                        buf.is_stem_stressed()
                     }
                 } else {
                     // No vowels in ending, stress 'е' in the stem into 'ё'

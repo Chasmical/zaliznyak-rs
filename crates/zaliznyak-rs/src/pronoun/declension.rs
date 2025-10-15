@@ -2,7 +2,7 @@ use crate::{
     categories::{DeclInfo, Gender, IntoNumber},
     declension::{Declension, PronounDeclension},
     pronoun::{Pronoun, PronounInfo},
-    util::InflectionBuf,
+    util::{InflectionBuf, StressPos},
     word::{Utf8Letter, Utf8LetterSlice, Word, WordBuf},
 };
 
@@ -32,6 +32,11 @@ impl PronounInfo {
 
 impl PronounDeclension {
     pub(crate) fn inflect(self, info: DeclInfo, buf: &mut InflectionBuf) {
+        // Determine the stress position
+        buf.stress =
+            if self.stress.is_ending_stressed(info) { StressPos::Ending } else { StressPos::Stem };
+
+        // Append the standard ending
         buf.append_to_ending(self.find_ending(info).as_str());
 
         if self.flags.has_star() {

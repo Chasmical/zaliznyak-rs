@@ -1,10 +1,18 @@
 use crate::word::{Utf8Letter, WordBuf};
 
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
+pub(crate) enum StressPos {
+    Stem,
+    Ending,
+}
+
 pub(crate) struct InflectionBuf<'a> {
     ptr: &'a mut Utf8Letter,
     pub(crate) len: usize,
     pub(crate) stem_len: usize,
     pub(crate) stress_at: usize,
+    pub(crate) stress: StressPos,
 }
 
 impl<'a> InflectionBuf<'a> {
@@ -14,7 +22,15 @@ impl<'a> InflectionBuf<'a> {
             len: word.buf.len(),
             stem_len: word.stem_len,
             stress_at: word.stress_at,
+            stress: StressPos::Stem,
         }
+    }
+
+    pub const fn is_stem_stressed(&self) -> bool {
+        self.stress == StressPos::Stem
+    }
+    pub const fn is_ending_stressed(&self) -> bool {
+        self.stress == StressPos::Ending
     }
 
     pub const fn as_slice(&self) -> &[Utf8Letter] {

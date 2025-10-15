@@ -7,6 +7,8 @@ use crate::{
     word::Utf8Letter,
 };
 
+// TODO: make find_ending accept a StressPos parameter, so the stress pos isn't calculated twice
+
 impl NounDeclension {
     /// Returns a noun ending according to this declension and info.
     ///

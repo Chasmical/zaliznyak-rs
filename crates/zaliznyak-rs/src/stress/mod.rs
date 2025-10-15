@@ -84,6 +84,14 @@ pub use convert::*;
 pub use fmt::*;
 pub use from_str::*;
 
+#[derive(Debug, Copy, Eq, Hash)]
+#[derive_const(Clone, PartialEq)]
+pub enum StressPos {
+    Ending,
+    Stem,
+    Either,
+}
+
 /// Any word's single stress schema. Can be converted to and from any other stress type.
 #[derive(Debug, Copy, Eq, Hash)]
 #[derive_const(Clone, PartialEq)]

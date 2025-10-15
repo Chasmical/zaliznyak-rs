@@ -1,11 +1,7 @@
-use crate::word::{Utf8Letter, WordBuf};
-
-#[derive(Debug, Copy, Eq, Hash)]
-#[derive_const(Clone, PartialEq)]
-pub(crate) enum StressPos {
-    Stem,
-    Ending,
-}
+use crate::{
+    stress::StressPos,
+    word::{Utf8Letter, WordBuf},
+};
 
 pub(crate) struct InflectionBuf<'a> {
     ptr: &'a mut Utf8Letter,

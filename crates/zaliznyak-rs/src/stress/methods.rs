@@ -2,7 +2,7 @@ use crate::{
     categories::{Case, DeclInfo, Gender, IntoNumber, IntoPerson, Number, Person},
     stress::{
         AdjectiveFullStress, AdjectiveShortStress, AdjectiveStress, AnyDualStress, AnyStress,
-        NounStress, PronounStress, VerbPastStress, VerbPresentStress, VerbStress,
+        NounStress, PronounStress, StressPos, VerbPastStress, VerbPresentStress, VerbStress,
     },
 };
 
@@ -500,6 +500,11 @@ impl NounStress {
     pub const fn is_ending_stressed(self, info: DeclInfo) -> bool {
         !self.is_stem_stressed(info)
     }
+
+    #[must_use]
+    pub const fn pos(self, info: DeclInfo) -> StressPos {
+        if self.is_stem_stressed(info) { StressPos::Stem } else { StressPos::Ending }
+    }
 }
 
 impl PronounStress {
@@ -517,6 +522,11 @@ impl PronounStress {
     pub const fn is_ending_stressed(self, info: DeclInfo) -> bool {
         !self.is_stem_stressed(info)
     }
+
+    #[must_use]
+    pub const fn pos(self, info: DeclInfo) -> StressPos {
+        if self.is_stem_stressed(info) { StressPos::Stem } else { StressPos::Ending }
+    }
 }
 
 impl AdjectiveFullStress {
@@ -529,6 +539,11 @@ impl AdjectiveFullStress {
     #[must_use]
     pub const fn is_ending_stressed(self) -> bool {
         !self.is_stem_stressed()
+    }
+
+    #[must_use]
+    pub const fn pos(self) -> StressPos {
+        if self.is_stem_stressed() { StressPos::Stem } else { StressPos::Ending }
     }
 }
 impl AdjectiveShortStress {
@@ -571,6 +586,15 @@ impl AdjectiveShortStress {
     pub const fn is_ending_stressed(self, number: Number, gender: Gender) -> Option<bool> {
         self.is_stem_stressed(number, gender).map(<bool as std::ops::Not>::not)
     }
+
+    #[must_use]
+    pub const fn pos(self, number: Number, gender: Gender) -> StressPos {
+        match self.is_stem_stressed(number, gender) {
+            Some(true) => StressPos::Stem,
+            Some(false) => StressPos::Ending,
+            None => StressPos::Either,
+        }
+    }
 }
 
 impl VerbPresentStress {
@@ -588,6 +612,11 @@ impl VerbPresentStress {
     #[must_use]
     pub const fn is_ending_stressed(self, number: Number, person: Person) -> bool {
         !self.is_stem_stressed(number, person)
+    }
+
+    #[must_use]
+    pub const fn pos(self, number: Number, person: Person) -> StressPos {
+        if self.is_stem_stressed(number, person) { StressPos::Stem } else { StressPos::Ending }
     }
 }
 impl VerbPastStress {
@@ -616,5 +645,14 @@ impl VerbPastStress {
     #[must_use]
     pub const fn is_ending_stressed(self, number: Number, gender: Gender) -> Option<bool> {
         self.is_stem_stressed(number, gender).map(<bool as std::ops::Not>::not)
+    }
+
+    #[must_use]
+    pub const fn pos(self, number: Number, gender: Gender) -> StressPos {
+        match self.is_stem_stressed(number, gender) {
+            Some(true) => StressPos::Stem,
+            Some(false) => StressPos::Ending,
+            None => StressPos::Either,
+        }
     }
 }

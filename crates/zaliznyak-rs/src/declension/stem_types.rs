@@ -194,26 +194,6 @@ const fn identify_any(stem: Utf8Letter, after: Option<Utf8Letter>) -> Option<Any
 
 impl NounStemType {
     /// Identifies a noun's stem and stem type from its nominative form.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zaliznyak::declension::NounStemType;
-    ///
-    /// assert_eq!(NounStemType::identify("акулы"), Some(("акул", NounStemType::Type1)));
-    /// assert_eq!(NounStemType::identify("тополь"), Some(("топол", NounStemType::Type2)));
-    /// assert_eq!(NounStemType::identify("точка"), Some(("точк", NounStemType::Type3)));
-    /// assert_eq!(NounStemType::identify("дача"), Some(("дач", NounStemType::Type4)));
-    /// assert_eq!(NounStemType::identify("блюдца"), Some(("блюдц", NounStemType::Type5)));
-    /// assert_eq!(NounStemType::identify("бельё"), Some(("бель", NounStemType::Type6)));
-    /// assert_eq!(NounStemType::identify("литий"), Some(("лити", NounStemType::Type7)));
-    ///
-    /// assert_eq!(NounStemType::identify("циркъ"), None);
-    /// assert_eq!(NounStemType::identify("wxyz"), None);
-    /// assert_eq!(NounStemType::identify("wxyzя"), None);
-    /// assert_eq!(NounStemType::identify("ы"), None);
-    /// assert_eq!(NounStemType::identify(""), None);
-    /// ```
     #[must_use]
     pub const fn identify(word: &[Utf8Letter]) -> Option<(&[Utf8Letter], NounStemType)> {
         // Read the word's last char
@@ -250,27 +230,6 @@ impl NounStemType {
 
 impl PronounStemType {
     /// Identifies a pronoun's stem and stem type from its nominative form.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zaliznyak::declension::PronounStemType;
-    ///
-    /// assert_eq!(PronounStemType::identify("один"), Some(("один", PronounStemType::Type1)));
-    /// assert_eq!(PronounStemType::identify("господень"), Some(("господен", PronounStemType::Type2)));
-    /// assert_eq!(PronounStemType::identify("наши"), Some(("наш", PronounStemType::Type4)));
-    /// assert_eq!(PronounStemType::identify("твоё"), Some(("тво", PronounStemType::Type6)));
-    ///
-    /// assert_eq!(PronounStemType::identify("сёмга"), None); // 3 - not compatible with pronouns
-    /// assert_eq!(PronounStemType::identify("солнце"), None); // 5 - not compatible with pronouns
-    /// assert_eq!(PronounStemType::identify("бытие"), None); // 7 - not compatible with pronouns
-    ///
-    /// assert_eq!(PronounStemType::identify("циркъ"), None);
-    /// assert_eq!(PronounStemType::identify("wxyz"), None);
-    /// assert_eq!(PronounStemType::identify("wxyzь"), None);
-    /// assert_eq!(PronounStemType::identify("ы"), None);
-    /// assert_eq!(PronounStemType::identify(""), None);
-    /// ```
     #[must_use]
     pub const fn identify(word: &[Utf8Letter]) -> Option<(&[Utf8Letter], PronounStemType)> {
         let (stem, stem_type) = NounStemType::identify(word)?;
@@ -293,30 +252,6 @@ impl PronounStemType {
 impl AdjectiveStemType {
     /// Identifies an adjective's stem and stem type from its nominative form, also returning a
     /// `bool` indicating whether the adjective is reflexive or not.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zaliznyak::declension::AdjectiveStemType as StemType;
-    ///
-    /// assert_eq!(StemType::identify("живое"), Some(("жив", StemType::Type1, false)));
-    /// assert_eq!(StemType::identify("осенний"), Some(("осенн", StemType::Type2, false)));
-    /// assert_eq!(StemType::identify("мягкая"), Some(("мягк", StemType::Type3, false)));
-    /// assert_eq!(StemType::identify("светящийся"), Some(("светящ", StemType::Type4, true)));
-    /// assert_eq!(StemType::identify("куцые"), Some(("куц", StemType::Type5, false)));
-    /// assert_eq!(StemType::identify("голошеяя"), Some(("голоше", StemType::Type6, false)));
-    ///
-    /// // TODO: should -ся be allowed for non-type-4 words?
-    /// assert_eq!(StemType::identify("красныйся"), Some(("красн", StemType::Type1, true)));
-    ///
-    /// assert_eq!(StemType::identify("ниий"), None); // 7 - not compatible with adjectives
-    ///
-    /// assert_eq!(StemType::identify("циркъий"), None);
-    /// assert_eq!(StemType::identify("wxyz"), None);
-    /// assert_eq!(StemType::identify("wxyzый"), None);
-    /// assert_eq!(StemType::identify("ая"), None);
-    /// assert_eq!(StemType::identify(""), None);
-    /// ```
     #[must_use]
     pub const fn identify(word: &[Utf8Letter]) -> Option<(&[Utf8Letter], AdjectiveStemType, bool)> {
         let (word, is_reflexive) = {

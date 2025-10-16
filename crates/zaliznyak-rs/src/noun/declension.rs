@@ -2,7 +2,7 @@ use crate::{
     categories::{Case, CaseEx, DeclInfo, Gender, IntoNumber, Number},
     declension::{Declension, NounDeclension, NounStemType},
     noun::{Noun, NounInfo},
-    stress::NounStress,
+    stress::{NounStress, StressPos},
     util::InflectionBuf,
     word::{Utf8Letter, Utf8LetterSlice, Word, WordBuf},
 };
@@ -132,6 +132,9 @@ impl NounDeclension {
                     // Set the stem char after '[ая]' to 'т'
                     *k = Т;
 
+                    // Fix stress placement (despite being b, stress here falls on '[ая]т' suffix)
+                    buf.stress = StressPos::Stem;
+
                     // Nominative - ending 'а', genitive - ending '', other - no changes
                     if let Some(is_gen) = info.case.acc_is_gen(info) {
                         buf.replace_ending(if is_gen { "" } else { "а" });
@@ -190,6 +193,9 @@ impl NounDeclension {
                         buf.remove_pre_last_stem_char();
                     }
                 }
+
+                // Fix stress placement (despite being b, stress here falls on '[ая]тк' suffix)
+                buf.stress = StressPos::Stem;
             },
             // -мя (время, знамя, пламя, имя)
             [.., М] if info.gender == Gender::Neuter => {

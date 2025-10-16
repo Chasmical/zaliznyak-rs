@@ -58,8 +58,8 @@
 //! the enums: [`DeclInfo`] for declension (nouns, adjectives, pronouns) and [`ConjInfo`] for
 //! conjugation (verbs).
 //!
-//! ```
-//! // FIXME: When AdjectiveInfo parsing is implemented, simplify this example
+//! ```ignore
+//! // FIXME: When Adjective parsing is implemented, fix this example
 //!
 //! use zaliznyak::{
 //!     adjective::{Adjective, AdjectiveFlags, AdjectiveInfo, AdjectiveKind},

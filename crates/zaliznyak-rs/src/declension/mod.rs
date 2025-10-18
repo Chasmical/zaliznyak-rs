@@ -86,6 +86,7 @@ mod endings_tables;
 mod flags;
 mod fmt;
 mod from_str;
+mod vowel_alternation;
 mod stem_types;
 
 pub use flags::*;

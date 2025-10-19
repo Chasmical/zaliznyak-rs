@@ -1,48 +1,56 @@
-/// A UTF-8-encoded lowercase cyrillic letter.
-///
-/// All lowercase cyrillic letters are 2 bytes wide in UTF-8, so a `[Utf8Letter]` can be safely
-/// and cheaply cast to an equivalent `str`. However, not every lowercase cyrillic `str` can be
-/// cast to an equivalent `[Utf8Letter]`, due to `str` having an alignment of 1, and `Utf8Letter`
-/// requiring an alignment of 2.
-#[derive(Debug, Copy, Eq, Hash)]
-#[derive_const(Clone, PartialEq)]
-#[rustfmt::skip]
-#[repr(u16)]
-pub enum Utf8Letter {
-    #[doc(hidden)] А = d('а'), #[doc(hidden)] Б = d('б'),
-    #[doc(hidden)] В = d('в'), #[doc(hidden)] Г = d('г'),
-    #[doc(hidden)] Д = d('д'), #[doc(hidden)] Е = d('е'),
-    #[doc(hidden)] Ж = d('ж'), #[doc(hidden)] З = d('з'),
-    #[doc(hidden)] И = d('и'), #[doc(hidden)] Й = d('й'),
-    #[doc(hidden)] К = d('к'), #[doc(hidden)] Л = d('л'),
-    #[doc(hidden)] М = d('м'), #[doc(hidden)] Н = d('н'),
-    #[doc(hidden)] О = d('о'), #[doc(hidden)] П = d('п'),
-    #[doc(hidden)] Р = d('р'), #[doc(hidden)] С = d('с'),
-    #[doc(hidden)] Т = d('т'), #[doc(hidden)] У = d('у'),
-    #[doc(hidden)] Ф = d('ф'), #[doc(hidden)] Х = d('х'),
-    #[doc(hidden)] Ц = d('ц'), #[doc(hidden)] Ч = d('ч'),
-    #[doc(hidden)] Ш = d('ш'), #[doc(hidden)] Щ = d('щ'),
-    #[doc(hidden)] Ъ = d('ъ'), #[doc(hidden)] Ы = d('ы'),
-    #[doc(hidden)] Ь = d('ь'), #[doc(hidden)] Э = d('э'),
-    #[doc(hidden)] Ю = d('ю'), #[doc(hidden)] Я = d('я'),
-    #[doc(hidden)] Ё = d('ё'),
+// A macro to mark all of the enum's variants with `#[doc(hidden)]`.
+macro_rules! doc_hidden_variants {
+    (
+        $(#[$outer:meta])* $vis:vis enum $T:ident {
+            $( $(#[$inner:meta])* $var:ident $(= $val:expr)? ),* $(,)?
+        }
+    ) => (
+        $(#[$outer])* $vis enum $T {
+            $( $(#[$inner])* #[doc(hidden)] $var $(= $val)? ),*
+        }
+    );
 }
 
-// TODO: Replace transmute with from_ne_bytes, when LSP/IDE fixes constants in pop-up window
-#[allow(unnecessary_transmutes, reason = "u16::from_ne_bytes breaks constants in pop-up window")]
+doc_hidden_variants! {
+    /// A UTF-8-encoded lowercase Russian letter.
+    ///
+    /// All lowercase Russian letters are 2 bytes wide in UTF-8, so a `[Utf8Letter]` can be safely
+    /// and cheaply cast to an equivalent `str`. However, not every lowercase Russian `str` can be
+    /// cast to an equivalent `[Utf8Letter]`, due to `str` having an alignment of 1, and `Utf8Letter`
+    /// requiring an alignment of 2.
+    #[derive(Debug, Copy, Eq, Hash)]
+    #[derive_const(Clone, PartialEq)]
+    #[rustfmt::skip]
+    #[repr(u16)]
+    pub enum Utf8Letter {
+        А = d('а'), Б = d('б'), В = d('в'), Г = d('г'), Д = d('д'), Е = d('е'), Ж = d('ж'), З = d('з'),
+        И = d('и'), Й = d('й'), К = d('к'), Л = d('л'), М = d('м'), Н = d('н'), О = d('о'), П = d('п'),
+        Р = d('р'), С = d('с'), Т = d('т'), У = d('у'), Ф = d('ф'), Х = d('х'), Ц = d('ц'), Ч = d('ч'),
+        Ш = d('ш'), Щ = d('щ'), Ъ = d('ъ'), Ы = d('ы'), Ь = d('ь'), Э = d('э'), Ю = d('ю'), Я = d('я'),
+        Ё = d('ё'),
+    }
+}
+
+#[allow(unnecessary_transmutes, reason = "TODO: from_ne_bytes breaks values in LSP/IDE popup")]
 const fn d(ch: char) -> u16 {
-    assert!(matches!(ch, 'а'..='я' | 'ё'));
-    // SAFETY: This function is only used by the enum above, for 'а'..='я' | 'ё' only.
-    unsafe { std::mem::transmute(encode_utf8_2(ch as u16)) }
+    assert!(is_lowercase_russian_char(ch));
+    // u16::from_ne_bytes(quick_encode(ch as u16))
+    unsafe { std::mem::transmute(quick_encode_utf8(ch as u16)) }
 }
 
-const fn encode_utf8_2(codepoint: u16) -> [u8; 2] {
-    [(codepoint >> 6 & 0x1F) as u8 | 0xC0, (codepoint & 0x3F) as u8 | 0x80]
+// Specialized encode/decode fns for 2-byte UTF-8 codepoints.
+const fn quick_encode_utf8(codepoint: u16) -> [u8; 2] {
+    [(codepoint >> 6) as u8 | 0xC0, (codepoint & 0x3F) as u8 | 0x80]
 }
-const fn decode_utf8_2(utf8: [u8; 2]) -> u16 {
+const fn quick_decode_utf8(utf8: [u8; 2]) -> u16 {
     (((utf8[0] & 0x1F) as u16) << 6) | ((utf8[1] & 0x3F) as u16)
 }
-const fn is_lowercase_cyrillic(utf8: [u8; 2]) -> bool {
+
+// Some helper functions to validate inputs
+const fn is_lowercase_russian_char(ch: char) -> bool {
+    matches!(ch, 'а'..='я' | 'ё')
+}
+const fn is_lowercase_russian_utf8(utf8: [u8; 2]) -> bool {
     //                   [А..=П]       |        [Р..=Я | Ё]
     matches!(utf8, [0xD0, 0xB0..=0xBF] | [0xD1, 0x80..=0x8F | 0x91])
 }
@@ -65,7 +73,7 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const fn from_utf8(utf8: [u8; 2]) -> Option<Self> {
-        if is_lowercase_cyrillic(utf8) {
+        if is_lowercase_russian_utf8(utf8) {
             // SAFETY: Just checked that the value is valid.
             Some(unsafe { Self::from_utf8_unchecked(utf8) })
         } else {
@@ -92,7 +100,7 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const unsafe fn from_utf8_unchecked(utf8: [u8; 2]) -> Self {
-        debug_assert!(is_lowercase_cyrillic(utf8));
+        debug_assert!(is_lowercase_russian_utf8(utf8));
         // SAFETY: The caller must uphold the safety contract.
         unsafe { std::mem::transmute(utf8) }
     }
@@ -114,7 +122,7 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const fn from_char(ch: char) -> Option<Self> {
-        if matches!(ch, 'а'..='я' | 'ё') {
+        if is_lowercase_russian_char(ch) {
             // SAFETY: Just checked that the value is valid.
             Some(unsafe { Self::from_char_unchecked(ch) })
         } else {
@@ -141,9 +149,9 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const unsafe fn from_char_unchecked(ch: char) -> Self {
-        debug_assert!(matches!(ch, 'а'..='я' | 'ё'));
+        debug_assert!(is_lowercase_russian_char(ch));
         // SAFETY: The caller must uphold the safety contract.
-        unsafe { Self::from_utf8_unchecked(encode_utf8_2(ch as u16)) }
+        unsafe { std::mem::transmute(quick_encode_utf8(ch as u16)) }
     }
 
     /// Returns this letter's UTF-8 bytes.
@@ -159,7 +167,7 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const fn to_utf8(self) -> [u8; 2] {
-        // SAFETY: Utf8Letter is always valid UTF-8.
+        // SAFETY: Utf8Letter is always a valid UTF-8 sequence.
         unsafe { std::mem::transmute(self) }
     }
     /// Returns a reference to this letter's UTF-8 bytes.
@@ -175,7 +183,7 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const fn as_utf8(&self) -> &[u8; 2] {
-        // SAFETY: Utf8Letter is always valid UTF-8.
+        // SAFETY: Utf8Letter is always a valid UTF-8 sequence.
         unsafe { std::mem::transmute(self) }
     }
     /// Returns a reference to this letter's UTF-8 bytes as a string.
@@ -191,7 +199,7 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const fn as_str(&self) -> &str {
-        // SAFETY: Utf8Letter is always valid UTF-8.
+        // SAFETY: Utf8Letter is always a valid UTF-8 sequence.
         unsafe { str::from_utf8_unchecked(self.as_utf8()) }
     }
 
@@ -208,91 +216,213 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const fn to_char(self) -> char {
-        // SAFETY: Utf8Letter can always be safely decoded to a scalar Unicode value.
-        unsafe { char::from_u32_unchecked(decode_utf8_2(self.to_utf8()) as u32) }
+        // SAFETY: Utf8Letter can always be safely decoded to a Unicode scalar.
+        unsafe { char::from_u32_unchecked(quick_decode_utf8(self.to_utf8()) as u32) }
     }
-
+    /// TODO: docs
     #[must_use]
-    const fn last_byte(self) -> LetterLastByte {
-        // SAFETY: LetterLastByte covers every possible last byte value.
+    pub const fn to_byte(self) -> ByteLetter {
+        // SAFETY: ByteLetter covers every possible last byte value.
         unsafe { std::mem::transmute(self.to_utf8()[1]) }
     }
 
     /// Returns `true` if this letter is a vowel (one of `аеиоуыэюяё`).
     #[must_use]
     pub const fn is_vowel(self) -> bool {
-        use LetterLastByte::*;
-        matches!(self.last_byte(), А | Е | И | О | У | Ы | Э | Ю | Я | Ё)
+        self.to_byte().is_vowel()
     }
-    /// Returns `true` if this letter is a hissing sibilant (one of `жчшщ`).
+    /// Returns `true` if this letter is a consonant (one of `бвгджзйклмнпрстфхцчшщ`).
     #[must_use]
-    pub const fn is_hissing(self) -> bool {
-        use LetterLastByte::*;
-        matches!(self.last_byte(), Ж | Ч | Ш | Щ)
-    }
-    /// Returns `true` if this letter is a sibilant consonant (one of `жцчшщ`).
-    #[must_use]
-    pub const fn is_sibilant(self) -> bool {
-        use LetterLastByte::*;
-        matches!(self.last_byte(), Ж | Ц | Ч | Ш | Щ)
+    pub const fn is_consonant(self) -> bool {
+        self.to_byte().is_consonant()
     }
     /// Returns `true` if this letter is a non-sibilant consonant (one of `бвгдзйклмнпрстфх`).
     #[must_use]
     pub const fn is_non_sibilant_consonant(self) -> bool {
-        use LetterLastByte::*;
-        matches!(self.last_byte(), Б | В | Г | Д | З | Й | К | Л | М | Н | П | Р | С | Т | Ф | Х)
+        self.to_byte().is_non_sibilant_consonant()
     }
-    /// Returns `true` if this letter is a consonant (one of `бвгджзйклмнпрстфхцчшщ`).
+    /// Returns `true` if this letter is a sibilant consonant (one of `жцчшщ`).
     #[must_use]
-    #[rustfmt::skip]
-    pub const fn is_consonant(self) -> bool {
-        use LetterLastByte::*;
-        matches!(self.last_byte(), Б | В | Г | Д | Ж | З | Й | К | Л | М | Н | П | Р | С | Т | Ф | Х | Ц | Ч | Ш | Щ)
+    pub const fn is_sibilant(self) -> bool {
+        self.to_byte().is_sibilant()
+    }
+    /// Returns `true` if this letter is a hissing sibilant consonant (one of `жчшщ`).
+    #[must_use]
+    pub const fn is_hissing(self) -> bool {
+        self.to_byte().is_hissing()
     }
 
     /// Returns `true` if this letter, when being the last letter in the word with noun-type
     /// declension, is excluded from the word's stem (one of `аеийоуыьэюяё`).
     #[must_use]
     pub(crate) const fn is_stem_trim_letter(self) -> bool {
-        use LetterLastByte::*;
-        matches!(self.last_byte(), А | Е | И | Й | О | У | Ы | Ь | Э | Ю | Я | Ё)
+        use ByteLetter::*;
+        matches!(self.to_byte(), А | Е | И | Й | О | У | Ы | Ь | Э | Ю | Я | Ё)
     }
 }
 
-impl const AsRef<str> for Utf8Letter {
-    fn as_ref(&self) -> &str {
-        self.as_str()
+doc_hidden_variants! {
+    // All the lowercase cyrillic letters' last UTF-8 bytes are distinct, meaning it's possible to
+    // match letters using the last byte only, making mass matches significantly more performant.
+    // TODO: This should be exposed in more places. It'd be very useful in parsing.
+    #[derive(Debug, Copy, Eq, Hash)]
+    #[derive_const(Clone, PartialEq)]
+    #[rustfmt::skip]
+    #[repr(u8)]
+    pub enum ByteLetter {
+        // [0xD0, 0xB0..=0xBF]
+        А = 0xB0, Б, В, Г, Д, Е, Ж, З, И, Й, К, Л, М, Н, О, П,
+        // [0xD1, 0x80..=0x8F]
+        Р = 0x80, С, Т, У, Ф, Х, Ц, Ч, Ш, Щ, Ъ, Ы, Ь, Э, Ю, Я,
+        // [0xD1, 0x91]
+        Ё = 0x91,
     }
 }
+
+impl ByteLetter {
+    #[must_use]
+    pub const fn from_utf8(utf8: [u8; 2]) -> Option<Self> {
+        Utf8Letter::from_utf8(utf8).map(Utf8Letter::to_byte)
+    }
+    #[must_use]
+    pub const unsafe fn from_utf8_unchecked(utf8: [u8; 2]) -> Self {
+        unsafe { Utf8Letter::from_utf8_unchecked(utf8) }.to_byte()
+    }
+
+    #[must_use]
+    pub const fn from_char(ch: char) -> Option<Self> {
+        Utf8Letter::from_char(ch).map(Utf8Letter::to_byte)
+    }
+    #[must_use]
+    pub const unsafe fn from_char_unchecked(ch: char) -> Self {
+        unsafe { Utf8Letter::from_char_unchecked(ch) }.to_byte()
+    }
+
+    #[must_use]
+    pub const fn to_utf8(self) -> Utf8Letter {
+        let first = if matches!(self as u8, 0xB0..=0xBF) { 0xD0 } else { 0xD1 };
+        unsafe { Utf8Letter::from_utf8_unchecked([first, self as u8]) }
+    }
+    #[must_use]
+    pub const fn to_char(self) -> char {
+        const LOWER: u32 = 'а' as u32 - (ByteLetter::А as u32 & 0x3F);
+        const UPPER: u32 = 'р' as u32 - (ByteLetter::Р as u32 & 0x3F);
+
+        let base = if matches!(self as u8, 0xB0..=0xBF) { LOWER } else { UPPER };
+        unsafe { char::from_u32_unchecked(base + (self as u32 & 0x3F)) }
+    }
+
+    /// Returns `true` if this letter is a vowel (one of `аеиоуыэюяё`).
+    #[must_use]
+    pub const fn is_vowel(self) -> bool {
+        use ByteLetter::*;
+        matches!(self, А | Е | И | О | У | Ы | Э | Ю | Я | Ё)
+    }
+    /// Returns `true` if this letter is a consonant (one of `бвгджзйклмнпрстфхцчшщ`).
+    #[must_use]
+    #[rustfmt::skip]
+    pub const fn is_consonant(self) -> bool {
+        use ByteLetter::*;
+        matches!(self, Б | В | Г | Д | Ж | З | Й | К | Л | М | Н | П | Р | С | Т | Ф | Х | Ц | Ч | Ш | Щ)
+    }
+    /// Returns `true` if this letter is a non-sibilant consonant (one of `бвгдзйклмнпрстфх`).
+    #[must_use]
+    pub const fn is_non_sibilant_consonant(self) -> bool {
+        use ByteLetter::*;
+        matches!(self, Б | В | Г | Д | З | Й | К | Л | М | Н | П | Р | С | Т | Ф | Х)
+    }
+    /// Returns `true` if this letter is a sibilant consonant (one of `жцчшщ`).
+    #[must_use]
+    pub const fn is_sibilant(self) -> bool {
+        use ByteLetter::*;
+        matches!(self, Ж | Ц | Ч | Ш | Щ)
+    }
+    /// Returns `true` if this letter is a hissing sibilant consonant (one of `жчшщ`).
+    #[must_use]
+    pub const fn is_hissing(self) -> bool {
+        use ByteLetter::*;
+        matches!(self, Ж | Ч | Ш | Щ)
+    }
+}
+
+// Some convenient conversion impls
+impl const From<Utf8Letter> for ByteLetter {
+    fn from(value: Utf8Letter) -> Self {
+        value.to_byte()
+    }
+}
+impl const From<ByteLetter> for Utf8Letter {
+    fn from(value: ByteLetter) -> Self {
+        value.to_utf8()
+    }
+}
+impl const From<Utf8Letter> for char {
+    fn from(value: Utf8Letter) -> Self {
+        value.to_char()
+    }
+}
+impl const From<ByteLetter> for char {
+    fn from(value: ByteLetter) -> Self {
+        value.to_char()
+    }
+}
+impl const TryFrom<char> for Utf8Letter {
+    type Error = ();
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        Self::from_char(value).ok_or(())
+    }
+}
+impl const TryFrom<char> for ByteLetter {
+    type Error = ();
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        Self::from_char(value).ok_or(())
+    }
+}
+
 impl const AsRef<[u8]> for Utf8Letter {
     fn as_ref(&self) -> &[u8] {
         self.as_utf8()
     }
 }
+impl const AsRef<str> for Utf8Letter {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
 
-// All the lowercase cyrillic letters' last UTF-8 bytes are distinct, meaning it's possible to
-// match letters using the last byte only, making mass matches significantly more performant.
-// TODO: This should be exposed in more places. It'd be very useful in parsing.
-#[allow(dead_code)]
-#[derive(Debug, Copy, Eq, Hash)]
-#[derive_const(Clone, PartialEq)]
-#[rustfmt::skip]
-#[repr(u8)]
-enum LetterLastByte {
-    // [0xD0, 0xB0..=0xBF]
-    А = 0xB0, Б, В, Г, Д, Е, Ж, З, И, Й, К, Л, М, Н, О, П,
-    // [0xD1, 0x80..=0x8F]
-    Р = 0x80, С, Т, У, Ф, Х, Ц, Ч, Ш, Щ, Ъ, Ы, Ь, Э, Ю, Я,
-    // [0xD1, 0x91]
-    Ё = 0x91,
+impl std::fmt::Display for Utf8Letter {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.as_str().fmt(f)
+    }
+}
+impl std::fmt::Display for ByteLetter {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.to_utf8().as_str().fmt(f)
+    }
 }
 
 mod private {
     pub trait Sealed {}
 }
 
-/// Provides [`as_str`][Utf8LetterSlice::as_str] method for the `[Utf8Letter]` slice.
+/// Provides [`as_str`][Utf8LetterSlice::as_str] and [`as_bytes`][Utf8LetterSlice::as_bytes] methods
+/// for the `[Utf8Letter]` slice.
 pub const trait Utf8LetterSlice: private::Sealed {
+    /// Casts this `[Utf8Letter]` slice to a `[u8]` slice.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::word::{Utf8Letter::*, Utf8LetterSlice};
+    ///
+    /// let word = vec![М, Ё, Д];
+    ///
+    /// assert_eq!(word.as_bytes(), &[0xD0, 0xBC, 0xD1, 0x91, 0xD0, 0xB4]);
+    /// assert_eq!(word[..2].as_bytes(), &[0xD0, 0xBC, 0xD1, 0x91]);
+    /// assert_eq!(word[2..].as_bytes(), &[0xD0, 0xB4]);
+    /// ```
+    #[must_use]
+    fn as_bytes(&self) -> &[u8];
     /// Casts this `[Utf8Letter]` slice to a `str` slice.
     ///
     /// # Examples
@@ -312,61 +442,53 @@ pub const trait Utf8LetterSlice: private::Sealed {
 
 impl private::Sealed for [Utf8Letter] {}
 impl const Utf8LetterSlice for [Utf8Letter] {
+    fn as_bytes(&self) -> &[u8] {
+        // SAFETY: Utf8Letters represent 2-byte UTF-8 chunks, and can be safely cast to UTF-8.
+        unsafe { std::slice::from_raw_parts(self.as_ptr().cast(), self.len() * 2) }
+    }
     fn as_str(&self) -> &str {
         // SAFETY: Utf8Letters represent 2-byte UTF-8 chunks, and can be safely cast to UTF-8.
-        unsafe { std::str::from_raw_parts(self.as_ptr().cast(), self.len() * 2) }
+        unsafe { str::from_utf8_unchecked(self.as_bytes()) }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Utf8Letter::{self, *};
-
-    #[rustfmt::skip]
-    const VOWELS: [Utf8Letter; 10] = [А,Е,И,О,У,Ы,Э,Ю,Я,Ё];
-    #[rustfmt::skip]
-    const HISSING: [Utf8Letter; 4] = [Ж,Ч,Ш,Щ];
-    #[rustfmt::skip]
-    const SIBILANT: [Utf8Letter; 5] = [Ж,Ц,Ч,Ш,Щ];
-    #[rustfmt::skip]
-    const NON_SIBILANT_CONSONANTS: [Utf8Letter; 16] = [Б,В,Г,Д,З,Й,К,Л,М,Н,П,Р,С,Т,Ф,Х];
-    #[rustfmt::skip]
-    const CONSONANTS: [Utf8Letter; 21] = [Б,В,Г,Д,Ж,З,Й,К,Л,М,Н,П,Р,С,Т,Ф,Х,Ц,Ч,Ш,Щ];
-    #[rustfmt::skip] #[allow(dead_code)]
-    const ALL: [Utf8Letter; 33] = [А,Б,В,Г,Д,Е,Ж,З,И,Й,К,Л,М,Н,О,П,Р,С,Т,У,Ф,Х,Ц,Ч,Ш,Щ,Ъ,Ы,Ь,Э,Ю,Я,Ё];
+    use super::*;
 
     #[test]
-    fn is_methods() {
-        for x in VOWELS {
-            assert!(x.is_vowel());
-            assert!(!x.is_hissing());
-            assert!(!x.is_sibilant());
-            assert!(!x.is_non_sibilant_consonant());
-            assert!(!x.is_consonant());
-        }
-        for x in HISSING {
-            assert!(!x.is_vowel());
-            assert!(x.is_hissing());
-            assert!(x.is_sibilant());
-            assert!(!x.is_non_sibilant_consonant());
-            assert!(x.is_consonant());
-        }
-        for x in SIBILANT {
-            assert!(!x.is_vowel());
-            assert!(x.is_sibilant());
-            assert!(!x.is_non_sibilant_consonant());
-            assert!(x.is_consonant());
-        }
-        for x in NON_SIBILANT_CONSONANTS {
-            assert!(!x.is_vowel());
-            assert!(!x.is_hissing());
-            assert!(!x.is_sibilant());
-            assert!(x.is_non_sibilant_consonant());
-            assert!(x.is_consonant());
-        }
-        for x in CONSONANTS {
-            assert!(!x.is_vowel());
-            assert!(x.is_consonant());
+    fn variants() {
+        assert_eq!(Utf8Letter::А.to_char(), 'а');
+        assert_eq!(Utf8Letter::Б.to_char(), 'б');
+        assert_eq!(Utf8Letter::Ш.to_char(), 'ш');
+        assert_eq!(Utf8Letter::Я.to_char(), 'я');
+        assert_eq!(Utf8Letter::Ё.to_char(), 'ё');
+
+        assert_eq!(ByteLetter::А.to_char(), 'а');
+        assert_eq!(ByteLetter::Б.to_char(), 'б');
+        assert_eq!(ByteLetter::Ш.to_char(), 'ш');
+        assert_eq!(ByteLetter::Я.to_char(), 'я');
+        assert_eq!(ByteLetter::Ё.to_char(), 'ё');
+    }
+
+    #[test]
+    fn encoding() {
+        for ch in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя".chars() {
+            let mut utf8 = [0; 2];
+            ch.encode_utf8(&mut utf8);
+
+            let utf8_letter = Utf8Letter::from_char(ch).unwrap();
+            assert_eq!(utf8_letter, Utf8Letter::from_utf8(utf8).unwrap());
+
+            assert_eq!(utf8_letter.to_char(), ch);
+            assert_eq!(utf8_letter.to_utf8(), utf8);
+            assert_eq!(utf8_letter.as_str(), ch.to_string());
+
+            let byte_letter = ByteLetter::from_char(ch).unwrap();
+            assert_eq!(byte_letter, ByteLetter::from_utf8(utf8).unwrap());
+
+            assert_eq!(byte_letter.to_char(), ch);
+            assert_eq!(byte_letter.to_utf8(), utf8_letter);
         }
     }
 }

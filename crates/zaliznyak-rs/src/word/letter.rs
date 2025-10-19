@@ -57,7 +57,7 @@ const fn is_lowercase_russian_utf8(utf8: [u8; 2]) -> bool {
 
 impl Utf8Letter {
     /// Constructs a `Utf8Letter` from UTF-8 bytes. Returns `None` if the UTF-8 bytes do not encode
-    /// a valid lowercase cyrillic letter.
+    /// a valid lowercase Russian letter.
     ///
     /// # Examples
     ///
@@ -81,7 +81,7 @@ impl Utf8Letter {
         }
     }
     /// Constructs a `Utf8Letter` from UTF-8 bytes, without checking if it's a valid lowercase
-    /// cyrillic letter.
+    /// Russian letter.
     ///
     /// # Safety
     ///
@@ -106,7 +106,7 @@ impl Utf8Letter {
     }
 
     /// Constructs a `Utf8Letter` from a [`char`]. Returns `None` if it's not a valid lowercase
-    /// cyrillic letter.
+    /// Russian letter.
     ///
     /// # Examples
     ///
@@ -130,7 +130,7 @@ impl Utf8Letter {
         }
     }
     /// Constructs a `Utf8Letter` from a [`char`], without checking if it's a valid lowercase
-    /// cyrillic letter.
+    /// Russian letter.
     ///
     /// # Safety
     ///
@@ -219,7 +219,17 @@ impl Utf8Letter {
         // SAFETY: Utf8Letter can always be safely decoded to a Unicode scalar.
         unsafe { char::from_u32_unchecked(quick_decode_utf8(self.to_utf8()) as u32) }
     }
-    /// TODO: docs
+    /// Returns this letter's uniquely identifiable last byte, as [`ByteLetter`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::word::{ByteLetter, Utf8Letter};
+    ///
+    /// assert_eq!(Utf8Letter::И.to_byte(), ByteLetter::И);
+    /// assert_eq!(Utf8Letter::Ф.to_byte(), ByteLetter::Ф);
+    /// assert_eq!(Utf8Letter::Ё.to_byte(), ByteLetter::Ё);
+    /// ```
     #[must_use]
     pub const fn to_byte(self) -> ByteLetter {
         // SAFETY: ByteLetter covers every possible last byte value.
@@ -262,9 +272,11 @@ impl Utf8Letter {
 }
 
 doc_hidden_variants! {
-    // All the lowercase cyrillic letters' last UTF-8 bytes are distinct, meaning it's possible to
-    // match letters using the last byte only, making mass matches significantly more performant.
-    // TODO: This should be exposed in more places. It'd be very useful in parsing.
+    /// Uniquely identifiable last byte of [`Utf8Letter`].
+    ///
+    /// All the lowercase Russian letters' last UTF-8 bytes are distinct, meaning it's possible to
+    /// match letters using the last byte only, making mass matches significantly more performant
+    /// (emitting the `bt` instruction, --- bitstring lookup).
     #[derive(Debug, Copy, Eq, Hash)]
     #[derive_const(Clone, PartialEq)]
     #[rustfmt::skip]
@@ -280,29 +292,119 @@ doc_hidden_variants! {
 }
 
 impl ByteLetter {
+    /// Constructs a `ByteLetter` from UTF-8 bytes. Returns `None` if the UTF-8 bytes do not encode
+    /// a valid lowercase Russian letter.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::word::ByteLetter;
+    ///
+    /// assert_eq!(ByteLetter::from_utf8([0xD0, 0xB0]), Some(ByteLetter::А));
+    /// assert_eq!(ByteLetter::from_utf8([0xD0, 0xB6]), Some(ByteLetter::Ж));
+    /// assert_eq!(ByteLetter::from_utf8([0xD1, 0x8E]), Some(ByteLetter::Ю));
+    ///
+    /// assert_eq!(ByteLetter::from_utf8([0xD1, 0x90]), None); // ѐ (U+0450 Ie With Grave)
+    /// assert_eq!(ByteLetter::from_utf8([0xC2, 0xB0]), None); // ° (U+00B0 Degree Sign)
+    /// ```
     #[must_use]
     pub const fn from_utf8(utf8: [u8; 2]) -> Option<Self> {
         Utf8Letter::from_utf8(utf8).map(Utf8Letter::to_byte)
     }
+    /// Constructs a `ByteLetter` from UTF-8 bytes, without checking if it's a valid lowercase
+    /// Russian letter.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe, as it may construct invalid `ByteLetter` values.
+    ///
+    /// For a safe version of this function, see the [`from_utf8`][Self::from_utf8] function.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::word::ByteLetter;
+    ///
+    /// assert_eq!(unsafe { ByteLetter::from_utf8_unchecked([0xD0, 0xB0]) }, ByteLetter::А);
+    /// assert_eq!(unsafe { ByteLetter::from_utf8_unchecked([0xD0, 0xB6]) }, ByteLetter::Ж);
+    /// assert_eq!(unsafe { ByteLetter::from_utf8_unchecked([0xD1, 0x8E]) }, ByteLetter::Ю);
+    /// ```
     #[must_use]
     pub const unsafe fn from_utf8_unchecked(utf8: [u8; 2]) -> Self {
+        // SAFETY: The caller must uphold the safety contract.
         unsafe { Utf8Letter::from_utf8_unchecked(utf8) }.to_byte()
     }
 
+    /// Constructs a `ByteLetter` from a [`char`]. Returns `None` if it's not a valid lowercase
+    /// Russian letter.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::word::ByteLetter;
+    ///
+    /// assert_eq!(ByteLetter::from_char('а'), Some(ByteLetter::А));
+    /// assert_eq!(ByteLetter::from_char('п'), Some(ByteLetter::П));
+    /// assert_eq!(ByteLetter::from_char('з'), Some(ByteLetter::З));
+    ///
+    /// assert_eq!(ByteLetter::from_char('ѐ'), None);
+    /// assert_eq!(ByteLetter::from_char('°'), None);
+    /// ```
     #[must_use]
     pub const fn from_char(ch: char) -> Option<Self> {
         Utf8Letter::from_char(ch).map(Utf8Letter::to_byte)
     }
+    /// Constructs a `ByteLetter` from a [`char`], without checking if it's a valid lowercase
+    /// Russian letter.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe, as it may construct invalid `ByteLetter` values.
+    ///
+    /// For a safe version of this function, see the [`from_char`][Self::from_char] function.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::word::ByteLetter;
+    ///
+    /// assert_eq!(unsafe { ByteLetter::from_char_unchecked('а') }, ByteLetter::А);
+    /// assert_eq!(unsafe { ByteLetter::from_char_unchecked('п') }, ByteLetter::П);
+    /// assert_eq!(unsafe { ByteLetter::from_char_unchecked('з') }, ByteLetter::З);
+    /// ```
     #[must_use]
     pub const unsafe fn from_char_unchecked(ch: char) -> Self {
+        // SAFETY: The caller must uphold the safety contract.
         unsafe { Utf8Letter::from_char_unchecked(ch) }.to_byte()
     }
 
+    /// Returns this letter's UTF-8 bytes, as [`Utf8Letter`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::word::{ByteLetter, Utf8Letter};
+    ///
+    /// assert_eq!(ByteLetter::И.to_utf8(), Utf8Letter::И);
+    /// assert_eq!(ByteLetter::Ф.to_utf8(), Utf8Letter::Ф);
+    /// assert_eq!(ByteLetter::Ё.to_utf8(), Utf8Letter::Ё);
+    /// ```
     #[must_use]
     pub const fn to_utf8(self) -> Utf8Letter {
         let first = if matches!(self as u8, 0xB0..=0xBF) { 0xD0 } else { 0xD1 };
         unsafe { Utf8Letter::from_utf8_unchecked([first, self as u8]) }
     }
+    /// Returns this letter's scalar [`char`] value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zaliznyak::word::ByteLetter;
+    ///
+    /// assert_eq!(ByteLetter::И.to_char(), 'и');
+    /// assert_eq!(ByteLetter::Ф.to_char(), 'ф');
+    /// assert_eq!(ByteLetter::Ё.to_char(), 'ё');
+    /// ```
     #[must_use]
     pub const fn to_char(self) -> char {
         const LOWER: u32 = 'а' as u32 - (ByteLetter::А as u32 & 0x3F);

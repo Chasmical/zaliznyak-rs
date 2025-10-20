@@ -213,6 +213,12 @@ impl fmt::Debug for WordBuf {
 
 impl fmt::Display for Display<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // If there are alignment requirements, format to a String, and then pad/align/trunc
+        if f.width().is_some() || f.precision().is_some() {
+            // TODO: Use a local constant size buffer instead of allocating a String on heap
+            return format!("{}", self).fmt(f);
+        }
+
         let add_accent = match self.accent.mode() {
             AccentMode::None => false,
             AccentMode::Explicit => self.word.stress_at > 0,

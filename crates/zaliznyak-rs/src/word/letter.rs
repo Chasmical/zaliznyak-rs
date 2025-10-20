@@ -216,8 +216,7 @@ impl Utf8Letter {
     /// ```
     #[must_use]
     pub const fn to_char(self) -> char {
-        // SAFETY: Utf8Letter can always be safely decoded to a Unicode scalar.
-        unsafe { char::from_u32_unchecked(quick_decode_utf8(self.to_utf8()) as u32) }
+        self.to_byte().to_char()
     }
     /// Returns this letter's uniquely identifiable last byte, as [`ByteLetter`].
     ///
@@ -407,11 +406,8 @@ impl ByteLetter {
     /// ```
     #[must_use]
     pub const fn to_char(self) -> char {
-        const LOWER: u32 = 'а' as u32 - (ByteLetter::А as u32 & 0x3F);
-        const UPPER: u32 = 'р' as u32 - (ByteLetter::Р as u32 & 0x3F);
-
-        let base = if matches!(self as u8, 0xB0..=0xBF) { LOWER } else { UPPER };
-        unsafe { char::from_u32_unchecked(base + (self as u32 & 0x3F)) }
+        let offset = (self as u8 + 16) & 0x3F;
+        unsafe { char::from_u32_unchecked('а' as u32 + offset as u32) }
     }
 
     /// Returns `true` if this letter is a vowel (one of `аеиоуыэюяё`).

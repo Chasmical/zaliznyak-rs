@@ -1,4 +1,7 @@
-use crate::word::{Utf8LetterSlice, Word, WordBuf, find_implicit_insert_stress_pos};
+use crate::{
+    util::DisplayBuffer,
+    word::{Utf8LetterSlice, Word, WordBuf, find_implicit_insert_stress_pos},
+};
 use std::fmt::{self, Write};
 
 /// Accent display info, storing [`AccentMode`] and the accent [`char`].
@@ -213,9 +216,18 @@ impl fmt::Debug for WordBuf {
 
 impl fmt::Display for Display<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // If there are alignment requirements, format to a String, and then pad/align/trunc
+        // If there are alignment requirements, format to a buffer/String, and then pad/align/trunc
         if f.width().is_some() || f.precision().is_some() {
-            // TODO: Use a local constant size buffer instead of allocating a String on heap
+            // If possible, use a local buffer instead of allocating a String on heap
+            if self.word.as_letters().len() <= 18 {
+                // A buffer for 18 cyrillic letters covers 99.9% of lexemes and should be enough.
+                // Then, additional space must be reserved for any specified accent and ending
+                // separator characters, so 4 bytes each (max codepoint length in UTF-8).
+                let mut buf = DisplayBuffer::<44>::new();
+                write!(buf, "{}", self).unwrap();
+                return buf.as_str().fmt(f);
+            }
+            // Otherwise, format into a new String
             return format!("{}", self).fmt(f);
         }
 

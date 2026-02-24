@@ -11,6 +11,9 @@ pub(crate) struct StackVec<T, const N: usize> {
     len: usize,
 }
 
+unsafe impl<T, const N: usize> Send for StackVec<T, N> {}
+unsafe impl<T, const N: usize> Sync for StackVec<T, N> {}
+
 //   Buf's Layout for [T; N] <= 1 usize
 // |--|--|--|--|--|--|--|--|
 // |00 00 00 00| <-Stack-> |

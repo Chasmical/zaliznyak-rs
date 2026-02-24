@@ -177,8 +177,7 @@ impl<const N: usize> StackVec<Utf8Letter, N> {
         // TODO: Is this kind of casting safe? GlobalAlloc::dealloc's docs say that the layout
         //   provided to alloc and dealloc MUST be the same, even if the alignment is less strict!
         unsafe {
-            let v = self.into_vec();
-            let (ptr, len, cap) = v.into_raw_parts();
+            let (ptr, len, cap) = self.into_vec().into_raw_parts();
             let vec = Vec::<u8>::from_raw_parts(ptr.cast(), len * 2, cap * 2);
             String::from_utf8_unchecked(vec)
         }

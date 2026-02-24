@@ -3,8 +3,8 @@ use thiserror::Error;
 
 mod declension;
 
-// FIXME(const-hack): Derive PartialEq with #[derive_const] when String supports it.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Eq, Hash)]
+#[derive_const(PartialEq)]
 pub struct Pronoun {
     stem: WordBuf,
     info: PronounInfo,

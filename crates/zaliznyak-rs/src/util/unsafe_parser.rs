@@ -15,7 +15,7 @@ impl<'a> UnsafeParser<'a> {
         unsafe { (&raw const *self.end).offset_from_unsigned(self.current) }
     }
     pub const fn remaining(&self) -> &'a [u8] {
-        unsafe { std::slice::from_ptr_range(self.current..self.end) }
+        unsafe { std::slice::from_ptr_range(&raw const *self.current..&raw const *self.end) }
     }
     pub const fn remaining_str(&self) -> &'a str {
         unsafe { str::from_utf8_unchecked(self.remaining()) }

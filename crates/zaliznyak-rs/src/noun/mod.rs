@@ -11,8 +11,8 @@ mod from_str;
 
 pub use from_str::*;
 
-// FIXME(const-hack): Derive PartialEq with #[derive_const] when String supports it.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Eq, Hash)]
+#[derive_const(PartialEq)]
 pub struct Noun {
     stem: WordBuf,
     info: NounInfo,
